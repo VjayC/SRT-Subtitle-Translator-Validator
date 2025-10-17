@@ -1,70 +1,337 @@
-# LLM-Translated Subtitle Validator
+# SRT Translator & Validator
 
-This repository contains a simple, browser-based tool to validate and compare SRT subtitle files. It was specifically created to help identify and correct common errors found in subtitles translated by Large Language Models (LLMs).
+<p align="center">
+  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M20 35 Q27.5 31 35 35 T50 35 T65 35 T80 35 M20 50 Q27.5 46 35 50 T50 50 T65 50 T80 50 M20 65 Q27.5 61 35 65 T50 65 T65 65 T80 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none'/%3E%3C/svg%3E" width="128" height="128" alt="SRT Translator & Validator Icon">
+</p>
+
+<p align="center">
+<a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
+<a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator"><img alt="Star this repo" src="https://img.shields.io/github/stars/VjayC/SRT-Subtitle-Translator-Validator.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
+</p>
+
+A comprehensive browser-based tool that leverages Large Language Models (LLMs) to translate SRT subtitle files and automatically validate the output for common errors. Built specifically to create high-quality, script-accurate subtitles using your existing Gemini subscription via [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI).
 
 ## Motivation
 
-My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. While Large Language Models (LLMs) are incredibly powerful and can translate subtitles in seconds, they often introduce subtle errors, such as desynchronized timestamps or the use of incorrect characters from a different language's script.
-
-I created this tool to serve as a final quality-check, making it easy to catch these specific LLM-generated mistakes and ensure the subtitles are perfect for her.
-
-## How LLMs Can Fall Short
-
-LLMs are great for translation, but they can sometimes struggle with the strict formatting of `.srt` files or the nuances of different scripts. Common issues include:
+My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. While Large Language Models (LLMs) are incredibly powerful and can translate subtitles in seconds, they often introduce subtle errors, such as:
 
 * **Timestamp Drift:** The model may slightly alter timestamps, causing subtitles to appear too early or too late.
-* **Character "Hallucinations":** When translating for a specific language (like Telugu), the model might mistakenly insert characters from a similar-looking but incorrect script (like Devanagari or Kannada).
+* **Character "Hallucinations":** When translating for a specific language (like Telugu), the model might mistakenly insert characters from a similar-looking but incorrect script (like Devanagari, Tamil, or Kannada).
+* **Incomplete Translations:** Long subtitle files may be cut off mid-translation.
 * **Formatting Errors:** Line breaks or subtitle numbering can sometimes be corrupted.
 
-This validator is designed to programmatically catch these exact issues.
+This tool automates the entire translation workflow, validates the output, and provides one-click fixes for common LLM errors—ensuring the subtitles are perfect.
 
-## Original Prompt
+## What This Tool Replaces
 
-This tool was inspired by the need to create high-quality, casual Telugu subtitles. The original prompt that started this project was:
-
-> "Given this prompt 'Please translate the subtitles for the TV show Psych (2006), S01E05, '9 Lives.' I would like them to be translated into casual Telugu so that my mother can better understand.
-> 
-> You don't have to translate all words into Telugu if they are better left in English. For example, proper names like 'Shawn Spencer' and basic phrases like 'At the top!' can remain in English. However, my mom will not understand complex English words, such as 'dimwitted,' so please translate those.
-> 
-> Essentially, I am asking you to incorporate 'Tenglish,' ensuring that Telugu words are in the Telugu script and English words remain in English text. Therefore, do not transliterate Telugu words into English letters.' translate the srt file. The translated text must strictly contain only English words (using the Latin alphabet) and Telugu words (using the Telugu script). Explicitly forbid the use of characters from any other scripts like Kannada, Tamil, Hindi, or Devanagari. Words from other languages (e.g., Spanish, Korean, Malayalam, Bengali) should not be used unless they exist in the input srt file. Ensure the timestamps are an exact copy."
+This is the successor to my original SRT Subtitle Validator, which could only validate pre-translated files. The new **SRT Translator & Validator** combines translation and validation into a single, streamlined workflow with automatic error correction.
 
 ## Features
 
-The `SRT Subtitle Validator.html` tool helps ensure the translated file meets strict requirements by performing two main checks:
+### Translation
+- **Direct LLM Integration:** Translate subtitles using your Gemini subscription (via CLI Proxy API)
+- **Customizable Prompts:** Full markdown editor with live preview for translation instructions
+- **Partial Translation Recovery:** Automatically detects incomplete translations and continues from where it stopped
+- **Language Detection:** Automatically identifies the target language for proper filename generation
+- **Raw Output Logging:** Saves all Gemini responses with timestamps for debugging
 
-1. **Timestamp Synchronization:** It compares the timestamps of the original English SRT file against the translated file to ensure they are perfectly aligned. It reports any mismatches, showing the expected and actual timestamps.
+### Validation
+- **Timestamp Synchronization:** Compares timestamps between source and translated files, reporting any mismatches with detailed ranges
+- **Script Validation:** Ensures translated text only contains characters from allowed Unicode ranges (e.g., English + Telugu)
+- **Configurable Character Sets:** Search from 130+ language scripts or add custom Unicode ranges/characters
+- **Real-time Feedback:** Color-coded error reports with subtitle indices and Unicode values
 
-2. **Character Validation:** It scans the translated SRT file to ensure it only contains characters from an allowed set of scripts. By default, it's configured for English and Telugu, flagging any "foreign" characters so you can quickly find and correct them.
+### Automatic Error Correction
+- **Fix Timestamp Errors:** One-click replacement of incorrect timestamps with source values
+- **Fix Script Errors:** Sends problematic subtitles back to Gemini for automatic correction
+- **Combined Fixing:** Handles both timestamp and script errors in a single operation
+- **Smart Validation:** Re-checks after fixes and shows remaining issues
 
-## How to Use
+### User Experience
+- **Editable Output:** View and manually edit translated subtitles before downloading
+- **Auto-save:** Preserve manual edits while continuing the workflow
+- **Progress Tracking:** Browser tab title shows current status (Translating, Translated, Fixing, Fixed, Error)
+- **Auto-scroll:** Automatically scrolls to validation results
+- **Dark/Light Mode:** Adapts to your system theme preference
 
-1. Download or clone this repository.
-2. Open the `SRT Subtitle Validator.html` file in any modern web browser.
-3. Upload your original English `.srt` file as the reference.
-4. Upload the LLM-translated `.srt` file.
-5. Click the "Validate Files" button to see a detailed report of any timestamp or character mismatches.
+## Prerequisites
 
-## Adapting for Other Languages
+### CLI Proxy API Installation
 
-This tool can be easily modified to validate subtitles for any language. You just need to change one line of code in the `SRT Subtitle Validator.html` file.
+CLI Proxy API is required to access your Gemini subscription through an API interface.
 
-1. Open the HTML file in a text editor.
-2. Find the `checkLanguageScript` function in the `<script>` section.
-3. Locate this line: `const isTelugu = (code) => code >= 0x0C00 && code <= 0x0C7F;`
-4. Replace it with a check for your target language's Unicode range. For example, to validate for **Tamil**, you would change it to:
-
-```javascript
-const isTamil = (code) => code >= 0x0B80 && code <= 0x0BFF;
+#### Install via Homebrew (Recommended)
+```bash
+brew install cliproxyapi
 ```
 
-5. Finally, update the `if` condition inside the loop to use your new function:
-
-```javascript
-// Before
-if (!(isBasicLatin(code) || isLatinSupplement(code) || isTelugu(code) || ...)) {
-
-// After (for Tamil)
-if (!(isBasicLatin(code) || isLatinSupplement(code) || isTamil(code) || ...)) {
+#### Or Build from Source
+1. Clone the repository:
+```bash
+git clone https://github.com/luispater/CLIProxyAPI.git
+cd CLIProxyAPI
 ```
 
-You can find the correct Unicode block for any language online (e.g., by searching "Tamil unicode range").
+2.  Build the application:
+    * **Linux, macOS:**
+        ```bash
+        go build -o cli-proxy-api ./cmd/server
+        ```
+    * **Windows:**
+        ```shell
+        go build -o cli-proxy-api.exe ./cmd/server
+        ```
+
+### Gemini Authentication
+
+**Important:** During login, you may need to choose or create a Google Cloud project. **Select a project with no billing account linked** to avoid unexpected charges. You can manage your projects at [console.cloud.google.com](https://console.cloud.google.com).
+
+1. Run the login command:
+```bash
+cliproxyapi --login
+```
+
+If you're an existing Gemini Code user:
+```bash
+cliproxyapi --login --project_id <your_project_id>
+```
+
+2. Follow the OAuth flow in your browser to authenticate
+3. The local OAuth callback uses port `8085`
+
+### Configuration
+
+Create or edit your `config.yaml` file:
+
+```yaml
+# Server port
+port: 8317
+
+# Authentication directory
+auth-dir: "~/.cli-proxy-api"
+
+# API keys for authentication
+api-keys:
+  - "your-api-key-here"  # Choose any value, must match the web app
+
+# Disable management panel (optional)
+remote-management:
+  disable-control-panel: true
+```
+
+**Important:** The `api-keys` value in `config.yaml` must match the API Key field in the web application.
+
+## Usage
+
+### 1. Start CLI Proxy API Server
+
+If installed via Homebrew:
+```bash
+/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi --config ~/path/to/your/config.yaml
+```
+
+If built from source:
+```bash
+./cli-proxy-api --config /path/to/your/config.yaml
+```
+
+The server will start on `http://localhost:8317` by default.
+
+### 2. Open the Web Application
+
+Open this link [`SRT Translator & Validator`](https://vjayc.github.io/SRT-Subtitle-Translator-Validator/) in any modern web browser.
+
+### 3. Configure the Application
+
+1. **CLI Proxy API Endpoint:** Default is `http://localhost:8317/v1/chat/completions`
+2. **Model Name:** Default is `gemini-2.5-pro`
+3. **API Key:** Enter the same key from your `config.yaml` (e.g., `1234567`)
+
+### 4. Set Up Allowed Scripts
+
+By default, the tool allows:
+- Basic Latin (English alphabet)
+- Latin Supplement (é, ñ, etc.)
+- Special characters (quotes, em-dash, line breaks)
+
+To add your target language:
+1. Type the language name in the search bar (e.g., "Telugu", "Arabic", "Tamil")
+2. Click the suggested script to add it
+3. Or add custom Unicode ranges: `U+0C00-U+0C7F` or single characters: `U+0C00`
+
+You can also remove any script (except special characters and line breaks) by clicking the × button.
+
+### 5. Create Your Translation Prompt
+
+Write your translation instructions in the prompt field. You can use markdown formatting and switch to **Markdown View** to preview how it renders.
+
+**Example Prompt:**
+```markdown
+You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in timestamps and script usage. Failure to adhere to these rules is not an option.
+
+**Goal:** Translate the attached English .srt file for the TV show Psych (2006), S02E02, (65 Million Years Off) into casual Telugu for a native speaker who is not fluent in complex English.
+
+### Core Directives (Must be followed without exception):
+
+**ABSOLUTE TIMESTAMP INTEGRITY:** This is the most critical rule. The timestamps in the output file MUST BE an exact, character-for-character, byte-for-byte copy of the timestamps in the source file. Treat the entire timestamp line (HH:MM:SS,ms --> HH:MM:SS,ms) as a single, unchangeable piece of data—a unique ID that must be copied exactly as it appears. Do not parse, interpret, round, or alter it in any way. A single missing or incorrect character is a total failure.
+
+✅ **CORRECT:** 00:14:56,928 (From Input SRT)
+❌ **INCORRECT:** 00:14:6,928 (Single Digit Missing)
+❌ **INCORRECT:** 00:14:46,928 (Single Digit Mismatch)
+❌ **INCORRECT:** 00:14:33,928 (Double Digit Mismatch)
+
+**PERFECT LINE BREAKS:** Preserve the original line breaks within each subtitle entry. If the original English subtitle has two lines, the translated Tenglish subtitle must also have two lines. Do not merge lines.
+
+**STRICT SCRIPT CONTROL:**
+
+- The final text may ONLY contain characters from the English (Latin) alphabet and the Telugu script.
+- ABSOLUTELY NO characters from any other script are allowed. This includes, but is not limited to, Devanagari (Hindi: नी), Gujarati (હ), Japanese (気), Tamil (த), Kannada (ಚಿ), or Malayalam (മ). Any character not in the standard English or Telugu alphabets is forbidden.
+
+**"TENGLISH" STYLE:**
+
+- Keep common English words, names (Shawn Spencer), and simple phrases (Who's in there?) in English.
+- Translate complex English words (requisitioning) into simple, casual Telugu.
+- Do not transliterate Telugu words into English letters. Use the Telugu script.
+
+### Error Correction Examples (Pay close attention to these):
+
+This table shows the exact type of script errors to avoid and their correct replacements.
+
+| Original English | ❌ Incorrect Translation (Mistake) | ✅ Correct Translation (Goal) |
+|---|---|---|
+| - I can't see a thing in here.<br>- I got it. | ఇక్కడ నాకు ఏమీ కనపడట్లేదు. నా దగ్గర ఉంది. (Merged lines) | - ఇక్కడ నాకు ఏమీ కనపడట్లేదు.<br>- నా దగ్గర ఉంది. (Correctly kept two lines) |
+| a killer's window | ఒక હત్యకుడి window (Uses Gujarati હ) | ఒక హత్యకుడి window (Uses correct Telugu హ) |
+| if you don't mind | మీరు気に పట్టించుకోకపోతే (Uses Japanese 気) | మీరు పట్టించుకోకపోతే (Uses correct Telugu script only) |
+| I am not a suspect | నేను suspect नी కాదు (Uses Devanagari नी) | నేను suspect ని కాదు (Uses correct Telugu ని) |
+
+### Final Verification Protocol:
+
+Before providing the final output, perform a self-correction check. Review your entire translated file one last time to confirm:
+
+1. **Timestamp Check:** Is every single digit of every timestamp identical to the source?
+2. **Line Break Check:** Does the line count of every subtitle entry match the source exactly?
+3. **Script Check:** Have you scanned the entire text to ensure there are zero characters from any script other than English and Telugu? Verify common error characters like హ vs. હ.
+
+Please begin the translation of the attached file, adhering strictly to these enhanced directives.
+```
+
+### 6. Upload and Translate
+
+1. Click "Choose Input SRT file..." and select your English subtitle file
+2. Click **"Translate with Gemini"**
+3. The tool will:
+   - Detect the target language
+   - Send the file to Gemini for translation
+   - Automatically validate the output
+   - Show any errors found
+
+### 7. Handle Partial Translations
+
+If Gemini stops mid-translation, you'll see:
+- "⚠️ Partial Translation Detected!"
+- Progress: "Translated: 250 / 500 subtitles"
+- A **"⏩ Continue Translating"** button
+
+Click the button to automatically resume translation from where it stopped. This process repeats until the file is complete.
+
+### 8. Review and Edit
+
+- View the translated subtitles in the editable text area
+- Make manual corrections if needed
+- Click **"💾 Save Edits"** to preserve changes
+
+### 9. Fix Errors Automatically
+
+If validation found errors, click **"🔧 Fix All Errors"** to:
+- Automatically correct timestamp mismatches
+- Send script errors back to Gemini for correction
+- Re-validate and show remaining issues
+
+### 10. Download Your Files
+
+- **"💾 Download Translated SRT"**: Downloads the corrected subtitle file
+  - Filename format: `OriginalName(Language)(Model).srt`
+  - Example: `Psych.S04E05.1080p.BluRay.Remux.eng(Tenglish)(Gemini 2.5 Pro).srt`
+- **"📄 Download Raw Output"**: Downloads all Gemini responses with timestamps for debugging
+
+## Supported Languages
+
+The tool includes 130+ pre-configured language scripts:
+
+- **Indian:** Telugu, Hindi, Tamil, Bengali, Gujarati, Kannada, Malayalam, Punjabi, Odia, Sinhala
+- **East Asian:** Chinese (6 CJK blocks), Japanese (Hiragana, Katakana), Korean (Hangul)
+- **Southeast Asian:** Thai, Lao, Burmese, Khmer, Tagalog, Balinese, Sundanese, Javanese
+- **Middle Eastern:** Arabic (5 variants), Hebrew, Persian, Urdu, Syriac
+- **European:** Greek, Cyrillic (4 variants), Armenian, Georgian
+- **African:** Ethiopic, Tifinagh, Coptic, Vai, Bamum
+- **Historical:** Egyptian Hieroglyphs, Cuneiform, Phoenician, Linear B, Runic, Ogham
+- **And many more...**
+
+You can also add any custom Unicode range or character.
+
+## Troubleshooting
+
+### "Translation Error: Failed to fetch"
+- Ensure CLI Proxy API is running: `ps aux | grep cliproxyapi`
+- Check the endpoint URL matches: `http://localhost:8317/v1/chat/completions`
+- Verify the port in `config.yaml` matches (default: 8317)
+
+### "No subtitles were translated"
+- Check your Gemini quota/limits
+- Try using `gemini-2.5-flash` instead of `gemini-2.5-pro`
+- Verify your prompt is clear and includes the SRT file content
+
+### "API Error: 401 Unauthorized"
+- Ensure the API Key in the web app matches `api-keys` in `config.yaml`
+- Try re-logging in: `cliproxyapi --login`
+
+### Script validation errors persist after fixing
+- Some errors may require manual correction
+- Check that you've added all necessary language scripts (e.g., Telugu)
+- Review the raw output file for Gemini's explanation
+
+### Partial translations don't complete
+- Gemini may have hit token limits; try splitting the file manually
+- Check the raw output file to see where Gemini stopped
+
+## Advanced Configuration
+
+### Using Different Models
+
+Edit the Model Name field to use other models:
+- `gemini-2.5-flash`: Faster, cheaper, good for simple translations
+- `gemini-2.5-pro`: More accurate, better for complex translations
+- See [CLI Proxy API docs](https://github.com/router-for-me/CLIProxyAPI) for all supported models
+
+**Important:** The application has only been tested with `gemini-2.5-pro`
+
+### Custom Unicode Ranges
+
+Add specific character ranges for edge cases:
+- Emoji: `U+1F600-U+1F64F`
+- Mathematical symbols: `2200-22FF`
+- Box drawing: `2500-257F`
+- Any single character: `U+20AC` (€ symbol)
+
+## Contributing
+
+Contributions are welcome! Some areas for improvement:
+- Support for streaming responses (real-time translation preview)
+- Batch file processing
+- Export validation reports as JSON/CSV
+- Integration with other LLM providers
+
+**Note:** Gemini was chosen due to a comparatively higher output token limit for its web client
+
+## Credits
+
+- Built on top of [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI)
+- Inspired by the need for accessible, quality subtitles for non-English speakers
+
+## License
+
+MIT License - see LICENSE file for details
+
+---
+
+Made with ❤️ for my mom and anyone else who wants to enjoy content in their native language.
