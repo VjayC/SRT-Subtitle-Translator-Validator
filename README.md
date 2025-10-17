@@ -1,7 +1,7 @@
 # SRT Translator & Validator
 
 <p align="center">
-  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M20 35 Q27.5 31 35 35 T50 35 T65 35 T80 35 M20 50 Q27.5 46 35 50 T50 50 T65 50 T80 50 M20 65 Q27.5 61 35 65 T50 65 T65 65 T80 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none'/%3E%3C/svg%3E" width="128" height="128" alt="SRT Translator & Validator Icon">
+  <img src="./icon.svg" width="128" height="128" alt="SRT Translator & Validator Icon">
 </p>
 
 <p align="center">
