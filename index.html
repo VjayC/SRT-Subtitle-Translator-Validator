@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT Translator & Validator</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23grad)'/%3E%3Cpath d='M 20 35 Q 27.5 31, 35 35 T 50 35 T 65 35 T 80 35 M 20 50 Q 27.5 46, 35 50 T 50 50 T 65 50 T 80 50 M 20 65 Q 27.5 61, 35 65 T 50 65 T 65 65 T 80 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --container-bg: #0a0a0a;
+            --container-border: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #ccc;
+            --text-subtle: #666;
+            --shadow-color: rgba(0, 0, 0, 0.8);
+            --button-bg: #1a1a1a;
+            --button-border: #333;
+            --button-text: #888;
+            --button-hover-bg: #222;
+            --button-hover-border: #444;
+            --button-hover-text: #aaa;
+            --results-bg: #0f0f0f;
+            --results-list-bg: #050505;
+            --scrollbar-thumb: #333;
+            --scrollbar-thumb-hover: #444;
+            --success-color: #4ade80;
+            --error-color: #f87171;
+            --warning-color: #fbbf24;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f5f5f7;
+                --container-bg: #ffffff;
+                --container-border: #d2d2d7;
+                --text-primary: #1d1d1f;
+                --text-secondary: #333;
+                --text-subtle: #6e6e73;
+                --shadow-color: rgba(0, 0, 0, 0.1);
+                --button-bg: #f5f5f7;
+                --button-border: #d2d2d7;
+                --button-text: #555;
+                --button-hover-bg: #e8e8ed;
+                --button-hover-border: #b2b2b7;
+                --button-hover-text: #333;
+                --results-bg: #f7f7f7;
+                --results-list-bg: #ffffff;
+                --scrollbar-thumb: #c1c1c1;
+                --scrollbar-thumb-hover: #a8a8a8;
+                --success-color: #22c55e;
+                --error-color: #ef4444;
+                --warning-color: #f59e0b;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px var(--shadow-color);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-subtle);
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        .config-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--results-bg);
+            border-radius: 12px;
+            border: 1px solid var(--container-border);
+        }
+
+        .config-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            overflow: hidden;
+        }
+
+        .prompt-preview {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            overflow: visible;
+            line-height: 1.6;
+        }
+
+        .prompt-preview h1, .prompt-preview h2, .prompt-preview h3 {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            color: var(--text-primary);
+        }
+
+        .prompt-preview h1 { font-size: 1.8em; border-bottom: 2px solid var(--container-border); padding-bottom: 0.3em; }
+        .prompt-preview h2 { font-size: 1.5em; }
+        .prompt-preview h3 { font-size: 1.3em; }
+
+        .prompt-preview p { margin-bottom: 1em; }
+
+        .prompt-preview ul, .prompt-preview ol { margin-left: 1.5em; margin-bottom: 1em; }
+
+        .prompt-preview code {
+            background: var(--results-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .prompt-preview pre {
+            background: var(--results-bg);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+
+        .prompt-preview pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .prompt-preview blockquote {
+            border-left: 4px solid var(--container-border);
+            padding-left: 1em;
+            margin-left: 0;
+            margin-bottom: 1em;
+            color: var(--text-subtle);
+        }
+
+        .prompt-preview strong { font-weight: bold; }
+        .prompt-preview em { font-style: italic; }
+
+        .prompt-preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
+        .prompt-preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
+        .prompt-preview table th,
+        .prompt-preview table td {
+            border: 1px solid var(--container-border);
+            padding: 8px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .prompt-preview table th {
+            background: var(--results-bg);
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .prompt-preview table td br,
+        .prompt-preview table th br {
+            display: block;
+            content: "";
+            margin: 0.5em 0;
+        }
+
+        .srt-editor {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .editor-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--results-bg);
+            border-radius: 12px;
+            border: 1px solid var(--container-border);
+            display: none;
+        }
+
+        .editor-section.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .editor-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .script-search-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .script-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--container-bg);
+            border: 1px solid var(--container-border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .script-suggestions.show {
+            display: block;
+        }
+
+        .script-suggestion-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+            border-bottom: 1px solid var(--container-border);
+        }
+
+        .script-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .script-suggestion-item:hover {
+            background: var(--button-hover-bg);
+        }
+
+        .script-suggestion-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .script-suggestion-range {
+            font-size: 12px;
+            color: var(--text-subtle);
+            margin-left: 8px;
+        }
+
+        .active-scripts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .script-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .script-tag.permanent {
+            background: var(--button-bg);
+            border: 1px solid var(--button-border);
+            color: var(--text-subtle);
+        }
+
+        .remove-script {
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--error-color);
+            line-height: 1;
+            transition: transform 0.2s;
+        }
+
+        .remove-script:hover {
+            transform: scale(1.2);
+        }
+
+        .custom-range-container {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .custom-range-container input {
+            flex: 1;
+            margin-bottom: 0 !important;
+            min-width: 0;
+        }
+
+        .custom-range-container button {
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .file-input-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-label {
+            display: block;
+            margin-bottom: 25px;
+            color: var(--text-subtle);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-button {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--button-bg);
+            border: 2px dashed var(--button-border);
+            border-radius: 12px;
+            color: var(--button-text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-button:hover {
+            background: var(--button-hover-bg);
+            border-color: var(--button-hover-border);
+            color: var(--button-hover-text);
+        }
+
+        .file-button.selected {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid #667eea;
+            color: var(--text-primary);
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .action-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-button.secondary {
+            background: var(--button-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--button-border);
+        }
+
+        .action-button.secondary:hover:not(:disabled) {
+            background: var(--button-hover-bg);
+            box-shadow: none;
+        }
+
+        .action-button.success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #22c55e 100%);
+            color: #000000;
+        }
+
+        .results {
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--results-bg);
+            border-radius: 12px;
+            border: 1px solid var(--container-border);
+            display: none;
+            overflow: visible;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .error {
+            color: var(--error-color);
+            font-weight: 500;
+        }
+
+        .warning {
+            color: var(--warning-color);
+            font-weight: 500;
+        }
+
+        .mismatch-list {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--results-list-bg);
+            border-radius: 8px;
+            border: 1px solid var(--container-border);
+        }
+
+        .mismatch-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: var(--container-bg);
+            border-radius: 6px;
+            border-left: 3px solid var(--error-color);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .mismatch-range {
+            color: var(--error-color);
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--container-border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-subtle);
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--container-border);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results::-webkit-scrollbar-track {
+            background: var(--container-bg);
+            border-radius: 4px;
+        }
+
+        .results::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        .results::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SRT Translator & Validator</h1>
+        <p class="subtitle">Translate, validate, and automatically fix subtitle files</p>
+
+        <div class="config-section">
+            <label class="config-label">CLI Proxy API Endpoint</label>
+            <input type="text" id="api-endpoint" class="config-input" value="http://localhost:8317/v1/chat/completions" placeholder="http://localhost:8317/v1/chat/completions">
+            
+            <label class="config-label" style="margin-top: 15px;">Model Name</label>
+            <input type="text" id="model-name" class="config-input" value="gemini-2.5-pro" placeholder="gemini-2.5-pro">
+            
+            <label class="config-label" style="margin-top: 15px;">API Key</label>
+            <input type="text" id="api-key" class="config-input" value="" placeholder="Enter your API key from config.yaml...">
+        </div>
+
+        <div class="config-section">
+            <label class="config-label">Allowed Script Ranges</label>
+            <div class="script-search-container">
+                <input type="text" id="script-search" class="config-input" placeholder="Search for a language script (e.g., Telugu, Arabic, Chinese)...">
+                <div id="script-suggestions" class="script-suggestions"></div>
+            </div>
+            <div class="custom-range-container">
+                <input type="text" id="custom-range-input" class="config-input" placeholder="Add custom: U+0C00-U+0C7F or U+0C00 or 0C00-0C7F">
+                <button id="add-custom-range" class="action-button secondary" style="padding: 10px 16px; font-size: 14px; width: auto; flex-shrink: 0;">
+                    ➕ Add
+                </button>
+            </div>
+            <div id="active-scripts" class="active-scripts">
+                <div class="script-tag" data-name="Basic Latin" data-start="0x0020" data-end="0x007E">
+                    Basic Latin (U+0020-U+007E)
+                    <span class="remove-script">×</span>
+                </div>
+                <div class="script-tag" data-name="Latin Supplement" data-start="0x00A0" data-end="0x00FF">
+                    Latin Supplement (U+00A0-U+00FF)
+                    <span class="remove-script">×</span>
+                </div>
+                <div class="script-tag permanent" data-name="Special Characters">
+                    Special Characters (', ", —, etc.)
+                </div>
+                <div class="script-tag permanent" data-name="Newlines">
+                    Line Breaks
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <div class="editor-header">
+                <label class="config-label" style="margin: 0;">Translation Prompt</label>
+                <button id="markdown-toggle-btn" class="action-button secondary" style="width: auto; padding: 8px 16px; margin: 0; font-size: 14px;">
+                    👁️ Markdown View
+                </button>
+            </div>
+            <textarea id="prompt-text" class="prompt-textarea" placeholder="Enter your translation instructions here..."></textarea>
+            <div id="prompt-preview" class="prompt-preview" style="display: none;"></div>
+        </div>
+
+        <div class="file-input-container" style="grid-template-columns: 1fr;">
+            <div class="file-input-wrapper">
+                <label class="file-label">Input SRT File (Source)</label>
+                <input type="file" id="srt-file" class="file-input" accept=".srt">
+                <label for="srt-file" class="file-button" id="srt-file-button">
+                    📄 Choose Input SRT file...
+                </label>
+            </div>
+        </div>
+
+        <button id="translate-btn" class="action-button" disabled>
+            Translate with Gemini
+        </button>
+
+        <div id="editor-section" class="editor-section">
+            <div class="editor-header">
+                <span class="editor-title">📝 Translated SRT Content (Editable)</span>
+                <button id="save-edit-btn" class="action-button secondary" style="width: auto; padding: 10px 20px; margin: 0;">
+                    💾 Save Edits
+                </button>
+            </div>
+            <textarea id="srt-editor" class="srt-editor" placeholder="Translated content will appear here..."></textarea>
+            <button id="continue-btn" class="action-button" style="display: none; margin-top: 15px;">
+                ⏩ Continue Translating
+            </button>
+        </div>
+
+        <div id="results" class="results"></div>
+
+        <div id="action-buttons" style="display: none;">
+            <div class="button-group">
+                <button id="download-raw-btn" class="action-button secondary">
+                    📄 Download Raw Output
+                </button>
+                <button id="fix-btn" class="action-button secondary">
+                    🔧 Fix All Errors
+                </button>
+            </div>
+            <button id="download-btn" class="action-button success" style="margin-top: 10px;">
+                💾 Download Translated SRT
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let sourceFile = null;
+        let promptText = null;
+        let translatedSRT = null;
+        let parsedSource = null;
+        let parsedTranslated = null;
+        let timestampMismatches = [];
+        let rawOutputLog = ''; // Stores all raw outputs from Gemini
+        let sourceFileName = ''; // Stores the original filename
+        let isMarkdownView = false; // Tracks markdown view state
+        let translationLanguage = ''; // Stores the detected language name
+        let isPartialTranslation = false; // Tracks if translation is incomplete
+        const originalTitle = document.title; // Store original title
+
+        function setPageTitle(status) {
+            if (status) {
+                document.title = `${status} - ${originalTitle}`;
+            } else {
+                document.title = originalTitle;
+            }
+        }
+
+        // Unicode script ranges database (comprehensive list)
+        const scriptRanges = {
+            // Latin scripts
+            'Basic Latin': { start: 0x0020, end: 0x007E },
+            'Latin Supplement': { start: 0x00A0, end: 0x00FF },
+            'Latin Extended-A': { start: 0x0100, end: 0x017F },
+            'Latin Extended-B': { start: 0x0180, end: 0x024F },
+            'Latin Extended Additional': { start: 0x1E00, end: 0x1EFF },
+            'Latin Extended-C': { start: 0x2C60, end: 0x2C7F },
+            'Latin Extended-D': { start: 0xA720, end: 0xA7FF },
+            'Latin Extended-E': { start: 0xAB30, end: 0xAB6F },
+            
+            // Indian scripts
+            'Devanagari (Hindi, Sanskrit, Marathi)': { start: 0x0900, end: 0x097F },
+            'Bengali (Bangla)': { start: 0x0980, end: 0x09FF },
+            'Gurmukhi (Punjabi)': { start: 0x0A00, end: 0x0A7F },
+            'Gujarati': { start: 0x0A80, end: 0x0AFF },
+            'Oriya (Odia)': { start: 0x0B00, end: 0x0B7F },
+            'Tamil': { start: 0x0B80, end: 0x0BFF },
+            'Telugu': { start: 0x0C00, end: 0x0C7F },
+            'Kannada': { start: 0x0C80, end: 0x0CFF },
+            'Malayalam': { start: 0x0D00, end: 0x0D7F },
+            'Sinhala': { start: 0x0D80, end: 0x0DFF },
+            
+            // Southeast Asian scripts
+            'Thai': { start: 0x0E00, end: 0x0E7F },
+            'Lao': { start: 0x0E80, end: 0x0EFF },
+            'Tibetan': { start: 0x0F00, end: 0x0FFF },
+            'Burmese (Myanmar)': { start: 0x1000, end: 0x109F },
+            'Khmer (Cambodian)': { start: 0x1780, end: 0x17FF },
+            'Tagalog (Baybayin)': { start: 0x1700, end: 0x171F },
+            'Balinese': { start: 0x1B00, end: 0x1B7F },
+            'Sundanese': { start: 0x1B80, end: 0x1BBF },
+            'Javanese': { start: 0xA980, end: 0xA9DF },
+            
+            // East Asian scripts
+            'Chinese (CJK Unified Ideographs)': { start: 0x4E00, end: 0x9FFF },
+            'Chinese (CJK Extension A)': { start: 0x3400, end: 0x4DBF },
+            'Chinese (CJK Extension B)': { start: 0x20000, end: 0x2A6DF },
+            'Chinese (CJK Extension C)': { start: 0x2A700, end: 0x2B73F },
+            'Chinese (CJK Extension D)': { start: 0x2B740, end: 0x2B81F },
+            'Chinese (CJK Extension E)': { start: 0x2B820, end: 0x2CEAF },
+            'Chinese (CJK Compatibility)': { start: 0xF900, end: 0xFAFF },
+            'Japanese Hiragana': { start: 0x3040, end: 0x309F },
+            'Japanese Katakana': { start: 0x30A0, end: 0x30FF },
+            'Japanese Katakana Phonetic': { start: 0x31F0, end: 0x31FF },
+            'Korean Hangul Syllables': { start: 0xAC00, end: 0xD7AF },
+            'Korean Hangul Jamo': { start: 0x1100, end: 0x11FF },
+            'Korean Hangul Compatibility Jamo': { start: 0x3130, end: 0x318F },
+            
+            // Middle Eastern scripts
+            'Arabic': { start: 0x0600, end: 0x06FF },
+            'Arabic Supplement': { start: 0x0750, end: 0x077F },
+            'Arabic Extended-A': { start: 0x08A0, end: 0x08FF },
+            'Arabic Presentation Forms-A': { start: 0xFB50, end: 0xFDFF },
+            'Arabic Presentation Forms-B': { start: 0xFE70, end: 0xFEFF },
+            'Hebrew': { start: 0x0590, end: 0x05FF },
+            'Syriac': { start: 0x0700, end: 0x074F },
+            'Thaana (Maldivian)': { start: 0x0780, end: 0x07BF },
+            'N\'Ko (West African)': { start: 0x07C0, end: 0x07FF },
+            'Samaritan': { start: 0x0800, end: 0x083F },
+            'Mandaic': { start: 0x0840, end: 0x085F },
+            'Persian (Farsi)': { start: 0xFB50, end: 0xFDFF },
+            'Urdu': { start: 0x0600, end: 0x06FF },
+            
+            // European scripts
+            'Greek': { start: 0x0370, end: 0x03FF },
+            'Greek Extended': { start: 0x1F00, end: 0x1FFF },
+            'Cyrillic (Russian, Ukrainian, etc.)': { start: 0x0400, end: 0x04FF },
+            'Cyrillic Supplement': { start: 0x0500, end: 0x052F },
+            'Cyrillic Extended-A': { start: 0x2DE0, end: 0x2DFF },
+            'Cyrillic Extended-B': { start: 0xA640, end: 0xA69F },
+            'Cyrillic Extended-C': { start: 0x1C80, end: 0x1C8F },
+            'Armenian': { start: 0x0530, end: 0x058F },
+            'Georgian': { start: 0x10A0, end: 0x10FF },
+            'Georgian Supplement': { start: 0x2D00, end: 0x2D2F },
+            
+            // African scripts
+            'Ethiopic (Amharic, Tigrinya)': { start: 0x1200, end: 0x137F },
+            'Ethiopic Supplement': { start: 0x1380, end: 0x139F },
+            'Ethiopic Extended': { start: 0x2D80, end: 0x2DDF },
+            'Tifinagh (Berber)': { start: 0x2D30, end: 0x2D7F },
+            'Coptic': { start: 0x2C80, end: 0x2CFF },
+            'Vai': { start: 0xA500, end: 0xA63F },
+            'Bamum': { start: 0xA6A0, end: 0xA6FF },
+            'Osmanya': { start: 0x10480, end: 0x104AF },
+            
+            // Native American scripts
+            'Cherokee': { start: 0x13A0, end: 0x13FF },
+            'Canadian Aboriginal Syllabics': { start: 0x1400, end: 0x167F },
+            'Canadian Aboriginal Extended': { start: 0x18B0, end: 0x18FF },
+            'Deseret': { start: 0x10400, end: 0x1044F },
+            
+            // Historical scripts
+            'Phoenician': { start: 0x10900, end: 0x1091F },
+            'Cuneiform': { start: 0x12000, end: 0x123FF },
+            'Egyptian Hieroglyphs': { start: 0x13000, end: 0x1342F },
+            'Anatolian Hieroglyphs': { start: 0x14400, end: 0x1467F },
+            'Linear B Syllabary': { start: 0x10000, end: 0x1007F },
+            'Linear B Ideograms': { start: 0x10080, end: 0x100FF },
+            'Gothic': { start: 0x10330, end: 0x1034F },
+            'Old Persian': { start: 0x103A0, end: 0x103DF },
+            'Ugaritic': { start: 0x10380, end: 0x1039F },
+            'Old Italic': { start: 0x10300, end: 0x1032F },
+            'Runic': { start: 0x16A0, end: 0x16FF },
+            'Ogham': { start: 0x1680, end: 0x169F },
+            
+            // Central/South Asian
+            'Mongolian': { start: 0x1800, end: 0x18AF },
+            'Phags-pa': { start: 0xA840, end: 0xA87F },
+            'Limbu': { start: 0x1900, end: 0x194F },
+            'Tai Le': { start: 0x1950, end: 0x197F },
+            'New Tai Lue': { start: 0x1980, end: 0x19DF },
+            'Tai Tham': { start: 0x1A20, end: 0x1AAF },
+            'Tai Viet': { start: 0xAA80, end: 0xAADF },
+            'Lepcha': { start: 0x1C00, end: 0x1C4F },
+            'Ol Chiki': { start: 0x1C50, end: 0x1C7F },
+            
+            // Symbols and special
+            'IPA Extensions': { start: 0x0250, end: 0x02AF },
+            'Phonetic Extensions': { start: 0x1D00, end: 0x1D7F },
+            'Phonetic Extensions Supplement': { start: 0x1D80, end: 0x1DBF },
+            'General Punctuation': { start: 0x2000, end: 0x206F },
+            'Currency Symbols': { start: 0x20A0, end: 0x20CF },
+            'Mathematical Operators': { start: 0x2200, end: 0x22FF },
+            'Box Drawing': { start: 0x2500, end: 0x257F },
+            'Geometric Shapes': { start: 0x25A0, end: 0x25FF },
+            'Miscellaneous Symbols': { start: 0x2600, end: 0x26FF },
+            'Dingbats': { start: 0x2700, end: 0x27BF },
+            'Emoticons': { start: 0x1F600, end: 0x1F64F },
+            'Emoji (Supplemental Symbols)': { start: 0x1F300, end: 0x1F5FF },
+        };
+
+        // Active script ranges (starts with defaults)
+        let activeScripts = [
+            { name: 'Basic Latin', start: 0x0020, end: 0x007E, removable: true },
+            { name: 'Latin Supplement', start: 0x00A0, end: 0x00FF, removable: true }
+        ];
+
+        function logRawOutput(content) {
+            const now = new Date();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            const month = monthNames[now.getMonth()];
+            const day = now.getDate();
+            const year = now.getFullYear();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            
+            const timezoneName = now.toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop();
+            const localTimestamp = `${month} ${day}, ${year}, ${hours}:${minutes} ${ampm} ${timezoneName}`;
+            
+            rawOutputLog += `\n${'='.repeat(80)}\n`;
+            rawOutputLog += `Translation at: ${localTimestamp}\n`;
+            rawOutputLog += `${'='.repeat(80)}\n`;
+            rawOutputLog += content;
+            rawOutputLog += `\n\n`;
+        }
+
+        function parseSRT(content) {
+            const subtitles = [];
+            if (!content) return subtitles;
+            const blocks = content.trim().split(/\n\s*\n/);
+
+            for (const block of blocks) {
+                const lines = block.trim().split('\n');
+                if (lines.length < 2) continue;
+
+                const indexLine = lines[0];
+                const timecodeLine = lines.length > 1 ? lines[1] : '';
+                const textLines = lines.slice(2);
+
+                const index = parseInt(indexLine);
+
+                if (!isNaN(index) && timecodeLine.includes('-->')) {
+                    subtitles.push({
+                        index: index,
+                        timecode: timecodeLine.trim(),
+                        text: textLines.join('\n')
+                    });
+                }
+            }
+            return subtitles;
+        }
+
+        function updateEditorContent() {
+            const editor = document.getElementById('srt-editor');
+            const editorSection = document.getElementById('editor-section');
+            if (translatedSRT) {
+                editor.value = translatedSRT;
+                editorSection.classList.add('show');
+                // Auto-resize to fit content
+                autoResizeTextarea(editor);
+            }
+        }
+
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight + 4) + 'px';
+        }
+
+        function parseMarkdown(markdown) {
+            let html = markdown;
+
+            // Escape HTML but preserve line breaks
+            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Tables (must be processed before other elements)
+            const tableRegex = /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/gm;
+            html = html.replace(tableRegex, function(match, headerRow, bodyRows) {
+                // Process header
+                const headers = headerRow.split('|').map(h => h.trim()).filter(h => h);
+                const headerHtml = '<tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr>';
+                
+                // Process body rows
+                const rows = bodyRows.trim().split('\n');
+                const bodyHtml = rows.map(row => {
+                    const cells = row.split('|').map(c => c.trim()).filter(c => c);
+                    return '<tr>' + cells.map(c => {
+                        // Convert &lt;br&gt; back to actual line breaks in tables
+                        const content = c.replace(/&lt;br&gt;/g, '<br>');
+                        return '<td>' + content + '</td>';
+                    }).join('') + '</tr>';
+                }).join('');
+                
+                return '<table>' + headerHtml + bodyHtml + '</table>';
+            });
+
+            // Headers
+            html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // Bold
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+            // Italic
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.+?)_/g, '<em>$1</em>');
+
+            // Code blocks
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+            // Inline code
+            html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+
+            // Links
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+            // Blockquotes
+            html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
+
+            // Unordered lists
+            html = html.replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>');
+            html = html.replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>');
+            html = html.replace(/<\/ul>\n<ul>/g, '');
+
+            // Ordered lists
+            html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
+            html = html.replace(/<\/ol>\n<ol>/g, '');
+
+            // Paragraphs
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = '<p>' + html + '</p>';
+
+            // Clean up empty paragraphs and wrapping issues
+            html = html.replace(/<p><\/p>/g, '');
+            html = html.replace(/<p>(<h[1-6]>)/g, '$1');
+            html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<ul>)/g, '$1');
+            html = html.replace(/(<\/ul>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<ol>)/g, '$1');
+            html = html.replace(/(<\/ol>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<blockquote>)/g, '$1');
+            html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<pre>)/g, '$1');
+            html = html.replace(/(<\/pre>)<\/p>/g, '$1');
+            html = html.replace(/<p>(<table>)/g, '$1');
+            html = html.replace(/(<\/table>)<\/p>/g, '$1');
+
+            return html;
+        }
+
+        function checkLanguageScript(subtitles) {
+            const errors = [];
+            const isAllowedSpecial = (code) => [
+                0x2018, 0x2019, 0x201C, 0x201D,
+                0x200C, 0x2014
+            ].includes(code);
+            const isNewline = (code) => code === 0x000A;
+            const isCarriageReturn = (code) => code === 0x000D;
+
+            for (const sub of subtitles) {
+                for (let i = 0; i < sub.text.length; i++) {
+                    const char = sub.text[i];
+                    const code = char.charCodeAt(0);
+                    
+                    // Check against active script ranges
+                    let isAllowed = false;
+                    
+                    // Check fixed ranges
+                    if (isAllowedSpecial(code) || isNewline(code) || isCarriageReturn(code)) {
+                        isAllowed = true;
+                    }
+                    
+                    // Check active custom ranges
+                    if (!isAllowed) {
+                        for (const script of activeScripts) {
+                            if (code >= script.start && code <= script.end) {
+                                isAllowed = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!isAllowed) {
+                        errors.push({
+                            index: sub.index,
+                            line: sub.text.replace(/\n/g, ' '),
+                            invalidChar: char,
+                            unicode: `U+${code.toString(16).toUpperCase().padStart(4, '0')}`
+                        });
+                        break;
+                    }
+                }
+            }
+            return errors;
+        }
+
+        document.getElementById('srt-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                sourceFileName = file.name.replace(/\.srt$/i, ''); // Remove .srt extension
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    sourceFile = event.target.result;
+                    parsedSource = parseSRT(sourceFile);
+                    document.getElementById('srt-file-button').classList.add('selected');
+                    document.getElementById('srt-file-button').textContent = `✓ ${file.name}`;
+                    checkCanTranslate();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('prompt-text').addEventListener('input', function() {
+            promptText = this.value;
+            checkCanTranslate();
+            // Auto-resize to fit content
+            autoResizeTextarea(this);
+        });
+
+        // Script search functionality
+        const scriptSearch = document.getElementById('script-search');
+        const scriptSuggestions = document.getElementById('script-suggestions');
+
+        scriptSearch.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            if (query === '') {
+                scriptSuggestions.classList.remove('show');
+                return;
+            }
+            
+            // Filter scripts based on search
+            const filtered = Object.entries(scriptRanges).filter(([name]) => {
+                return name.toLowerCase().includes(query);
+            }).filter(([name]) => {
+                // Don't show already active scripts
+                return !activeScripts.some(s => s.name === name);
+            });
+            
+            if (filtered.length === 0) {
+                scriptSuggestions.innerHTML = '<div class="script-suggestion-item" style="color: var(--text-subtle);">No matching scripts found</div>';
+                scriptSuggestions.classList.add('show');
+                return;
+            }
+            
+            // Display suggestions
+            scriptSuggestions.innerHTML = filtered.map(([name, range]) => {
+                const startHex = range.start.toString(16).toUpperCase().padStart(4, '0');
+                const endHex = range.end.toString(16).toUpperCase().padStart(4, '0');
+                return `<div class="script-suggestion-item" data-name="${name}" data-start="${range.start}" data-end="${range.end}">
+                    <span class="script-suggestion-name">${name}</span>
+                    <span class="script-suggestion-range">U+${startHex}-U+${endHex}</span>
+                </div>`;
+            }).join('');
+            
+            scriptSuggestions.classList.add('show');
+        });
+
+        // Click on suggestion to add script
+        scriptSuggestions.addEventListener('click', function(e) {
+            const item = e.target.closest('.script-suggestion-item');
+            if (!item || !item.dataset.name) return;
+            
+            const name = item.dataset.name;
+            const start = parseInt(item.dataset.start);
+            const end = parseInt(item.dataset.end);
+            
+            // Add to active scripts
+            activeScripts.push({ name, start, end, removable: true });
+            
+            // Update UI
+            updateActiveScriptsUI();
+            
+            // Clear search
+            scriptSearch.value = '';
+            scriptSuggestions.classList.remove('show');
+        });
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!scriptSearch.contains(e.target) && !scriptSuggestions.contains(e.target)) {
+                scriptSuggestions.classList.remove('show');
+            }
+        });
+
+        function updateActiveScriptsUI() {
+            const container = document.getElementById('active-scripts');
+            
+            // Build HTML for active scripts
+            let html = activeScripts.map(script => {
+                const startHex = script.start.toString(16).toUpperCase().padStart(4, '0');
+                const endHex = script.end.toString(16).toUpperCase().padStart(4, '0');
+                return `<div class="script-tag" data-name="${script.name}" data-start="${script.start}" data-end="${script.end}">
+                    ${script.name} (U+${startHex}-U+${endHex})
+                    ${script.removable ? '<span class="remove-script">×</span>' : ''}
+                </div>`;
+            }).join('');
+            
+            // Add permanent tags
+            html += `
+                <div class="script-tag permanent" data-name="Special Characters">
+                    Special Characters (', ", —, etc.)
+                </div>
+                <div class="script-tag permanent" data-name="Newlines">
+                    Line Breaks
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Remove script functionality
+        document.getElementById('active-scripts').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-script')) {
+                const tag = e.target.closest('.script-tag');
+                const name = tag.dataset.name;
+                
+                // Remove from activeScripts
+                activeScripts = activeScripts.filter(s => s.name !== name);
+                
+                // Update UI
+                updateActiveScriptsUI();
+            }
+        });
+
+        // Add custom range functionality
+        document.getElementById('add-custom-range').addEventListener('click', function() {
+            const input = document.getElementById('custom-range-input');
+            const value = input.value.trim().toUpperCase();
+            
+            if (!value) {
+                alert('Please enter a Unicode range or character');
+                return;
+            }
+            
+            let start, end, name;
+            
+            // Try to parse different formats
+            // Format 1: U+0C00-U+0C7F
+            let match = value.match(/U\+([0-9A-F]+)-U\+([0-9A-F]+)/);
+            if (match) {
+                start = parseInt(match[1], 16);
+                end = parseInt(match[2], 16);
+                name = `Custom Range U+${match[1]}-U+${match[2]}`;
+            }
+            
+            // Format 2: 0C00-0C7F
+            if (!match) {
+                match = value.match(/([0-9A-F]+)-([0-9A-F]+)/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = parseInt(match[2], 16);
+                    name = `Custom Range U+${match[1]}-U+${match[2]}`;
+                }
+            }
+            
+            // Format 3: U+0C00 (single character)
+            if (!match) {
+                match = value.match(/U\+([0-9A-F]+)/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = start;
+                    name = `Custom Character U+${match[1]}`;
+                }
+            }
+            
+            // Format 4: 0C00 (single character, no U+)
+            if (!match) {
+                match = value.match(/^([0-9A-F]+)$/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = start;
+                    name = `Custom Character U+${match[1]}`;
+                }
+            }
+            
+            if (!match || isNaN(start) || isNaN(end)) {
+                alert('Invalid format. Please use:\n- U+0C00-U+0C7F\n- 0C00-0C7F\n- U+0C00\n- 0C00');
+                return;
+            }
+            
+            if (start > end) {
+                alert('Start value must be less than or equal to end value');
+                return;
+            }
+            
+            // Check if already exists
+            if (activeScripts.some(s => s.start === start && s.end === end)) {
+                alert('This range is already added');
+                return;
+            }
+            
+            // Add to active scripts
+            activeScripts.push({ name, start, end, removable: true });
+            
+            // Update UI
+            updateActiveScriptsUI();
+            
+            // Clear input
+            input.value = '';
+        });
+
+        // Allow Enter key to add custom range
+        document.getElementById('custom-range-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('add-custom-range').click();
+            }
+        });
+
+        document.getElementById('markdown-toggle-btn').addEventListener('click', function() {
+            const promptText = document.getElementById('prompt-text');
+            const promptPreview = document.getElementById('prompt-preview');
+            
+            isMarkdownView = !isMarkdownView;
+            
+            if (isMarkdownView) {
+                // Switch to markdown view
+                promptPreview.innerHTML = parseMarkdown(promptText.value);
+                promptText.style.display = 'none';
+                promptPreview.style.display = 'block';
+                this.textContent = '✏️ Edit Mode';
+            } else {
+                // Switch back to edit mode
+                promptText.style.display = 'block';
+                promptPreview.style.display = 'none';
+                this.textContent = '👁️ Markdown View';
+                // Resize after switching back
+                autoResizeTextarea(promptText);
+            }
+        });
+
+        function checkCanTranslate() {
+            const translateBtn = document.getElementById('translate-btn');
+            if (sourceFile && promptText) {
+                translateBtn.disabled = false;
+            }
+        }
+
+        function checkAndHandlePartialTranslation() {
+            const results = document.getElementById('results');
+            const continueBtn = document.getElementById('continue-btn');
+            
+            if (parsedTranslated.length === 0) {
+                results.innerHTML = '<div class="error">❌ No subtitles were translated. Please try again.</div>';
+                setPageTitle('Error!');
+                return;
+            }
+
+            const lastTranslatedIndex = parsedTranslated[parsedTranslated.length - 1].index;
+            const lastSourceIndex = parsedSource[parsedSource.length - 1].index;
+
+            if (lastTranslatedIndex < lastSourceIndex) {
+                // Partial translation detected
+                isPartialTranslation = true;
+                
+                // Remove the last subtitle as it might be incomplete
+                parsedTranslated.pop();
+                
+                // Update translatedSRT
+                translatedSRT = parsedTranslated.map(sub => 
+                    `${sub.index}\n${sub.timecode}\n${sub.text}`
+                ).join('\n\n');
+                
+                updateEditorContent();
+                
+                const translatedCount = parsedTranslated.length;
+                const totalCount = parsedSource.length;
+                
+                results.innerHTML = `
+                    <div class="warning">⚠️ Partial Translation Detected!</div>
+                    <div class="mismatch-list">
+                        <p>Translated: ${translatedCount} / ${totalCount} subtitles</p>
+                        <p>Last completed subtitle: #${parsedTranslated[parsedTranslated.length - 1].index}</p>
+                        <p style="margin-top: 10px; color: var(--text-subtle);">The last subtitle was removed as it may be incomplete. Click "Continue Translating" to resume from where it stopped.</p>
+                    </div>
+                `;
+                results.classList.add('show');
+                
+                // Show continue button
+                continueBtn.style.display = 'block';
+                
+                // Scroll to results section
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+                
+                setPageTitle('Translating...');
+            } else {
+                // Complete translation
+                isPartialTranslation = false;
+                continueBtn.style.display = 'none';
+                updateEditorContent();
+                validateTranslation();
+                setPageTitle('Translated');
+            }
+        }
+
+        async function continueTranslation() {
+            const results = document.getElementById('results');
+            const continueBtn = document.getElementById('continue-btn');
+            const translateBtn = document.getElementById('translate-btn');
+            
+            results.innerHTML = '<div class="loading"></div> Continuing translation...';
+            continueBtn.disabled = true;
+            translateBtn.disabled = true; // Disable translate button during continuation
+
+            setPageTitle('Translating...');
+
+            try {
+                const apiEndpoint = document.getElementById('api-endpoint').value;
+                const modelName = document.getElementById('model-name').value;
+                const apiKey = document.getElementById('api-key').value || 'dummy';
+                const nextIndex = parsedTranslated[parsedTranslated.length - 1].index + 1;
+
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: `Begin from index ${nextIndex}\n` + promptText + '\n\n' + sourceFile
+                            }
+                        ],
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                let continuedSRT = data.choices[0].message.content;
+
+                // Log raw output
+                logRawOutput(continuedSRT);
+
+                const codeBlockMatch = continuedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
+                if (codeBlockMatch) {
+                    continuedSRT = codeBlockMatch[1];
+                }
+
+                const continuedParsed = parseSRT(continuedSRT);
+                
+                // Append to existing translation
+                parsedTranslated = parsedTranslated.concat(continuedParsed);
+                
+                // Update translatedSRT
+                translatedSRT = parsedTranslated.map(sub => 
+                    `${sub.index}\n${sub.timecode}\n${sub.text}`
+                ).join('\n\n');
+
+                // Check again for partial translation
+                checkAndHandlePartialTranslation();
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Continue Translation Error: ${error.message}</div>`;
+                setPageTitle('Error!');
+            } finally {
+                continueBtn.disabled = false;
+                translateBtn.disabled = false; // Re-enable translate button
+            }
+        }
+
+        document.getElementById('translate-btn').addEventListener('click', async function() {
+            const results = document.getElementById('results');
+            const actionButtons = document.getElementById('action-buttons');
+            const translateBtn = this;
+            const continueBtn = document.getElementById('continue-btn');
+            
+            // Hide continue button if visible
+            continueBtn.style.display = 'none';
+            isPartialTranslation = false;
+            
+            actionButtons.style.display = 'none';
+            results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
+            results.classList.add('show');
+            
+            // Disable translate button
+            translateBtn.disabled = true;
+
+            setPageTitle('Translating...');
+
+            try {
+                const apiEndpoint = document.getElementById('api-endpoint').value;
+                const modelName = document.getElementById('model-name').value;
+                const apiKey = document.getElementById('api-key').value || 'dummy';
+
+                // First, detect the translation language
+                results.innerHTML = '<div class="loading"></div> Detecting translation language...';
+                
+                const languageResponse = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gemini-2.5-flash',
+                        messages: [
+                            {
+                                role: 'user',
+                                content: `Given this prompt [${promptText}], only output the name of the translation target language or the target code-mixed/code-switched vernacular (e.g., Tenglish, Hinglish).`
+                            }
+                        ],
+                        stream: false
+                    })
+                });
+
+                if (languageResponse.ok) {
+                    const languageData = await languageResponse.json();
+                    translationLanguage = languageData.choices[0].message.content.trim();
+                    // Remove any quotes or extra formatting
+                    translationLanguage = translationLanguage.replace(/['"]/g, '');
+                } else {
+                    translationLanguage = 'Translated'; // Fallback
+                }
+
+                // Now perform the actual translation
+                results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
+
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
+
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelName,
+                        messages: [
+                            {
+                                role: 'user',
+                                content: promptText + '\n\n' + sourceFile
+                            }
+                        ],
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                translatedSRT = data.choices[0].message.content;
+
+                // Log raw output
+                logRawOutput(translatedSRT);
+
+                const codeBlockMatch = translatedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
+                if (codeBlockMatch) {
+                    translatedSRT = codeBlockMatch[1];
+                }
+
+                parsedTranslated = parseSRT(translatedSRT);
+                
+                // Check for partial translation
+                checkAndHandlePartialTranslation();
+            } catch (error) {
+                results.innerHTML = `<div class="error">❌ Translation Error: ${error.message}</div>`;
+                setPageTitle('Error!');
+            } finally {
+                // Re-enable translate button
+                translateBtn.disabled = false;
+            }
+        });
+
+        function validateTranslation() {
+            const results = document.getElementById('results');
+            const actionButtons = document.getElementById('action-buttons');
+
+            if (parsedSource.length !== parsedTranslated.length) {
+                results.innerHTML = `
+                    <div class="error">❌ Error: Subtitle count mismatch!</div>
+                    <div class="mismatch-list">
+                        <p>Source: ${parsedSource.length} subtitles</p>
+                        <p>Translated: ${parsedTranslated.length} subtitles</p>
+                    </div>
+                `;
+                return;
+            }
+
+            timestampMismatches = [];
+            let currentRange = null;
+
+            for (let i = 0; i < parsedSource.length; i++) {
+                if (!parsedSource[i] || !parsedTranslated[i] || parsedSource[i].timecode !== parsedTranslated[i].timecode) {
+                    if (!parsedSource[i] || !parsedTranslated[i]) continue;
+                    if (currentRange && currentRange.end === i - 1) {
+                        currentRange.end = i;
+                        currentRange.endIndex = parsedSource[i].index;
+                    } else {
+                        if (currentRange) timestampMismatches.push(currentRange);
+                        currentRange = { start: i, end: i, startIndex: parsedSource[i].index, endIndex: parsedSource[i].index };
+                    }
+                } else {
+                    if (currentRange) {
+                        timestampMismatches.push(currentRange);
+                        currentRange = null;
+                    }
+                }
+            }
+            if (currentRange) timestampMismatches.push(currentRange);
+
+            let timestampHtml = '';
+            if (timestampMismatches.length === 0) {
+                timestampHtml = `
+                    <div class="success">✅ Perfect match! All timestamps are synchronized.</div>
+                    <div class="stats">
+                        <div class="stat-item"><div class="stat-value">${parsedSource.length}</div><div class="stat-label">Total Subtitles</div></div>
+                        <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Mismatches</div></div>
+                        <div class="stat-item"><div class="stat-value">100%</div><div class="stat-label">Sync Rate</div></div>
+                    </div>
+                `;
+            } else {
+                const mismatchCount = timestampMismatches.reduce((acc, range) => acc + (range.end - range.start + 1), 0);
+                const syncRate = ((parsedSource.length - mismatchCount) / parsedSource.length * 100).toFixed(1);
+                timestampHtml = `<div class="error">❌ Timestamp mismatches detected!</div><div class="warning" style="margin-top: 10px;">Found ${timestampMismatches.length} mismatch range(s):</div><div class="mismatch-list">`;
+                for (const range of timestampMismatches) {
+                    if (range.start === range.end) {
+                        timestampHtml += `<div class="mismatch-item"><span class="mismatch-range">Subtitle #${range.startIndex}</span><br>Source: ${parsedSource[range.start].timecode}<br>Translated: ${parsedTranslated[range.start].timecode}</div>`;
+                    } else {
+                        timestampHtml += `<div class="mismatch-item"><span class="mismatch-range">Subtitles #${range.startIndex} to #${range.endIndex}</span><br>Range affects ${range.end - range.start + 1} subtitle(s)</div>`;
+                    }
+                }
+                timestampHtml += `</div><div class="stats">
+                    <div class="stat-item"><div class="stat-value">${parsedSource.length}</div><div class="stat-label">Total Subtitles</div></div>
+                    <div class="stat-item"><div class="stat-value" style="color: var(--error-color);">${mismatchCount}</div><div class="stat-label">Mismatches</div></div>
+                    <div class="stat-item"><div class="stat-value">${syncRate}%</div><div class="stat-label">Sync Rate</div></div>
+                </div>`;
+            }
+
+            let languageHtml = '';
+            const languageErrors = checkLanguageScript(parsedTranslated);
+            if (languageErrors.length > 0) {
+                languageHtml = `<div class="warning" style="margin-top: 30px; border-top: 1px solid var(--container-border); padding-top: 20px;">⚠️ Foreign Script Detected!</div><div class="mismatch-list">`;
+                for (const err of languageErrors) {
+                    languageHtml += `<div class="mismatch-item" style="border-left-color: var(--warning-color);"><strong>Subtitle #${err.index}:</strong> Found invalid character '<strong>${err.invalidChar}</strong>' (${err.unicode})<br><span style="color: var(--text-subtle);">Line: "${err.line}"</span></div>`;
+                }
+                languageHtml += `</div>`;
+            }
+
+            results.innerHTML = timestampHtml + languageHtml;
+            actionButtons.style.display = 'block';
+            
+            // Scroll to results section
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 100);
+        }
+
+        document.getElementById('save-edit-btn').addEventListener('click', function() {
+            const editor = document.getElementById('srt-editor');
+            translatedSRT = editor.value;
+            parsedTranslated = parseSRT(translatedSRT);
+            
+            // Auto-resize after saving
+            autoResizeTextarea(editor);
+            
+            // Show feedback
+            const originalText = this.textContent;
+            this.textContent = '✓ Saved!';
+            setTimeout(() => {
+                this.textContent = originalText;
+            }, 2000);
+        });
+
+        document.getElementById('continue-btn').addEventListener('click', function() {
+            continueTranslation();
+        });
+
+        document.getElementById('fix-btn').addEventListener('click', async function() {
+            const fixBtn = this;
+            const results = document.getElementById('results');
+            const translateBtn = document.getElementById('translate-btn');
+            
+            // Check if there are any errors to fix
+            const languageErrors = checkLanguageScript(parsedTranslated);
+            const hasTimestampErrors = timestampMismatches.length > 0;
+            const hasLanguageErrors = languageErrors.length > 0;
+            
+            if (!hasTimestampErrors && !hasLanguageErrors) {
+                alert('No errors to fix!');
+                return;
+            }
+            
+            fixBtn.disabled = true;
+            translateBtn.disabled = true;
+            setPageTitle('Fixing...');
+            
+            // Fix timestamp errors first
+            if (hasTimestampErrors) {
+                for (const range of timestampMismatches) {
+                    for (let i = range.start; i <= range.end; i++) {
+                        parsedTranslated[i].timecode = parsedSource[i].timecode;
+                    }
+                }
+            }
+            
+            // Fix language errors using Gemini
+            if (hasLanguageErrors) {
+                results.innerHTML = '<div class="loading"></div> Fixing foreign script errors with Gemini...';
+                
+                try {
+                    // Get unique subtitle indices with errors
+                    const errorIndices = [...new Set(languageErrors.map(err => err.index))];
+                    
+                    // Create subset of source subtitles
+                    const subsetParsedSource = parsedSource
+                        .filter(sub => errorIndices.includes(sub.index))
+                        .map(sub => `${sub.index}\n${sub.timecode}\n${sub.text}`)
+                        .join('\n\n');
+                    
+                    // Create subset of translated subtitles with error info
+                    const subsetParsedTranslated = parsedTranslated
+                        .filter(sub => errorIndices.includes(sub.index))
+                        .map(sub => {
+                            const error = languageErrors.find(err => err.index === sub.index);
+                            if (error) {
+                                return `${sub.index}: Found invalid character '${error.invalidChar}' (${error.unicode})\n${sub.timecode}\n${sub.text}`;
+                            }
+                            return `${sub.index}\n${sub.timecode}\n${sub.text}`;
+                        })
+                        .join('\n\n');
+                    
+                    // Call Gemini to fix the errors
+                    const apiEndpoint = document.getElementById('api-endpoint').value;
+                    const modelName = document.getElementById('model-name').value;
+                    const apiKey = document.getElementById('api-key').value || 'dummy';
+
+                    const response = await fetch(apiEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [
+                                {
+                                    role: 'user',
+                                    content: `Given this prompt [${promptText}] and subset of the input SRT [${subsetParsedSource}] fix only these subtitles [${subsetParsedTranslated}]`
+                                }
+                            ],
+                            stream: false
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    let fixedSRT = data.choices[0].message.content;
+                    
+                    // Log raw output
+                    logRawOutput(fixedSRT);
+                    
+                    // Extract from code block if needed
+                    const codeBlockMatch = fixedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
+                    if (codeBlockMatch) {
+                        fixedSRT = codeBlockMatch[1];
+                    }
+                    
+                    // Parse the fixed subtitles
+                    const fixedParsed = parseSRT(fixedSRT);
+                    
+                    // Replace the fixed subtitles in parsedTranslated
+                    for (const fixedSub of fixedParsed) {
+                        const index = parsedTranslated.findIndex(sub => sub.index === fixedSub.index);
+                        if (index !== -1) {
+                            parsedTranslated[index] = fixedSub;
+                        }
+                    }
+                    
+                } catch (error) {
+                    results.innerHTML = `<div class="error">❌ Fix Error: ${error.message}</div>`;
+                    fixBtn.disabled = false;
+                    translateBtn.disabled = false;
+                    setPageTitle('Error!');
+                    return;
+                }
+            }
+            
+            // Update translatedSRT with all fixes
+            translatedSRT = parsedTranslated.map(sub => 
+                `${sub.index}\n${sub.timecode}\n${sub.text}`
+            ).join('\n\n');
+
+            updateEditorContent();
+
+            // Re-check for remaining language errors
+            const remainingLanguageErrors = checkLanguageScript(parsedTranslated);
+            let languageHtml = '';
+            if (remainingLanguageErrors.length > 0) {
+                languageHtml = `<div class="warning" style="margin-top: 30px; border-top: 1px solid var(--container-border); padding-top: 20px;">⚠️ Foreign Script Detected!</div><div class="mismatch-list">`;
+                for (const err of remainingLanguageErrors) {
+                    languageHtml += `<div class="mismatch-item" style="border-left-color: var(--warning-color);"><strong>Subtitle #${err.index}:</strong> Found invalid character '<strong>${err.invalidChar}</strong>' (${err.unicode})<br><span style="color: var(--text-subtle);">Line: "${err.line}"</span></div>`;
+                }
+                languageHtml += `</div>`;
+            }
+
+            results.innerHTML = `
+                <div class="success">✅ All errors have been fixed!</div>
+                <div class="stats">
+                    <div class="stat-item"><div class="stat-value">${parsedSource.length}</div><div class="stat-label">Total Subtitles</div></div>
+                    <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Timestamp Errors</div></div>
+                    <div class="stat-item"><div class="stat-value">${remainingLanguageErrors.length}</div><div class="stat-label">Script Errors</div></div>
+                </div>
+            ` + languageHtml;
+
+            timestampMismatches = [];
+            fixBtn.disabled = false;
+            translateBtn.disabled = false;
+            
+            // Set title based on remaining errors
+            if (remainingLanguageErrors.length === 0) {
+                setPageTitle('Fixed');
+            } else {
+                setPageTitle('Translated');
+            }
+            
+            // Scroll to results section
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 100);
+        });
+
+        document.getElementById('download-btn').addEventListener('click', function() {
+            if (!translatedSRT) {
+                alert('No translated content to download!');
+                return;
+            }
+
+            // Get model name and format it
+            const modelName = document.getElementById('model-name').value;
+            const formattedModelName = modelName
+                .split('-')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+
+            // Create filename with language and model name
+            let filename;
+            if (sourceFileName && sourceFileName.trim() !== '') {
+                filename = `${sourceFileName}(${translationLanguage})(${formattedModelName}).srt`;
+            } else {
+                filename = `translated_subtitles(${translationLanguage})(${formattedModelName}).srt`;
+            }
+
+            const blob = new Blob([translatedSRT], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('download-raw-btn').addEventListener('click', function() {
+            if (!rawOutputLog) {
+                alert('No raw output to download!');
+                return;
+            }
+
+            const blob = new Blob([rawOutputLog], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gemini_raw_output.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
