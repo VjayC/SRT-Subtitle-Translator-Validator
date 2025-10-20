@@ -910,14 +910,16 @@
             return subtitles;
         }
 
-        function updateEditorContent() {
+        function updateEditorContent(shouldResize = true) {
             const editor = document.getElementById('srt-editor');
             const editorSection = document.getElementById('editor-section');
             if (translatedSRT) {
                 editor.value = translatedSRT;
                 editorSection.classList.add('show');
-                // Auto-resize to fit content
-                autoResizeTextarea(editor);
+                // Only auto-resize if explicitly requested
+                if (shouldResize) {
+                    autoResizeTextarea(editor);
+                }
             }
         }
 
@@ -1304,6 +1306,9 @@
             if (parsedTranslated.length === 0) {
                 results.innerHTML = '<div class="error">❌ No subtitles were translated. Please try again.</div>';
                 setPageTitle('Error!');
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
                 return;
             }
 
@@ -1322,7 +1327,7 @@
                     `${sub.index}\n${sub.timecode}\n${sub.text}`
                 ).join('\n\n');
                 
-                updateEditorContent();
+                updateEditorContent(false); // Don't resize to prevent scroll jump
                 
                 const translatedCount = parsedTranslated.length;
                 const totalCount = parsedSource.length;
@@ -1340,7 +1345,7 @@
                 // Show continue button
                 continueBtn.style.display = 'block';
                 
-                // Scroll to results section
+                // Scroll to bottom of page
                 setTimeout(() => {
                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }, 100);
@@ -1440,6 +1445,10 @@
             actionButtons.style.display = 'none';
             results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
             results.classList.add('show');
+
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 100);
             
             // Disable translate button
             translateBtn.disabled = true;
@@ -1483,10 +1492,6 @@
 
                 // Now perform the actual translation
                 results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
-
-                setTimeout(() => {
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                }, 100);
 
                 const response = await fetch(apiEndpoint, {
                     method: 'POST',
@@ -1546,7 +1551,35 @@
                         <p>Translated: ${parsedTranslated.length} subtitles</p>
                     </div>
                 `;
+                setTimeout(() => {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }, 100);
                 return;
+            }
+
+            // Add a flag to track if we have any previous content
+            let hasPreviousContent = false;
+
+            // Index sequence check
+            let indexHtml = '';
+            const indexSequenceErrors = [];
+            for (let i = 1; i < parsedTranslated.length; i++) {
+                if (parsedTranslated[i].index <= parsedTranslated[i-1].index) {
+                    indexSequenceErrors.push({
+                        position: i,
+                        currentIndex: parsedTranslated[i].index,
+                        previousIndex: parsedTranslated[i-1].index
+                    });
+                }
+            }
+            if (indexSequenceErrors.length > 0) {
+                indexHtml = `<div class="error">❌ Index Sequence Errors Detected!</div><div class="mismatch-list">`;
+                indexHtml += `<p style="margin-bottom: 15px; color: var(--warning-color);">⚠️ Subtitle indices must be strictly increasing. These errors may indicate duplicated or misordered subtitles. <strong>Manual review or retranslation is recommended.</strong></p>`;
+                for (const err of indexSequenceErrors) {
+                    indexHtml += `<div class="mismatch-item">After subtitle with index <span class="mismatch-range">${err.previousIndex}</span>, the next index is <span class="mismatch-range">${err.currentIndex}</span> (expected ${err.previousIndex + 1} or greater)</div>`;
+                }
+                indexHtml += `</div>`;
+                hasPreviousContent = true;
             }
 
             timestampMismatches = [];
@@ -1599,6 +1632,13 @@
                 </div>`;
             }
 
+            if (timestampHtml) {
+                if (hasPreviousContent) {
+                    timestampHtml = `<div style="margin-top: 30px; border-top: 1px solid var(--container-border); padding-top: 20px;">${timestampHtml}</div>`;
+                }
+                hasPreviousContent = true;
+            }
+
             let languageHtml = '';
             const languageErrors = checkLanguageScript(parsedTranslated);
             if (languageErrors.length > 0) {
@@ -1609,10 +1649,10 @@
                 languageHtml += `</div>`;
             }
 
-            results.innerHTML = timestampHtml + languageHtml;
+            results.innerHTML = indexHtml + timestampHtml + languageHtml;
             actionButtons.style.display = 'block';
             
-            // Scroll to results section
+            // Scroll to bottom of page
             setTimeout(() => {
                 window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             }, 100);
@@ -1756,7 +1796,7 @@
                 `${sub.index}\n${sub.timecode}\n${sub.text}`
             ).join('\n\n');
 
-            updateEditorContent();
+            updateEditorContent(false); // Don't resize to prevent scroll jump
 
             // Re-check for remaining language errors
             const remainingLanguageErrors = checkLanguageScript(parsedTranslated);
@@ -1788,11 +1828,6 @@
             } else {
                 setPageTitle('Translated');
             }
-            
-            // Scroll to results section
-            setTimeout(() => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }, 100);
         });
 
         document.getElementById('download-btn').addEventListener('click', function() {
