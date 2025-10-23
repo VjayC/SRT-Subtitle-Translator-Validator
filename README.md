@@ -1,7 +1,7 @@
 # SRT Translator & Validator
 
 <p align="center">
-  <img src="./icon.svg" width="128" height="128" alt="SRT Translator & Validator Icon">
+  <img src="./images/icon.svg" width="128" height="128" alt="SRT Translator & Validator Icon">
 </p>
 
 <p align="center">
@@ -10,6 +10,13 @@
 </p>
 
 A comprehensive browser-based tool that leverages Large Language Models (LLMs) to translate SRT subtitle files and automatically validate the output for common errors. Built specifically to create high-quality, script-accurate subtitles using your existing Gemini subscription via [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI).
+
+Original TV Show in English            |  Output of translated SRT in Tenglish
+:-------------------------:|:-------------------------:
+![](./images/psych_english_translation.png)  |  ![](./images/psych_tenglish_translation.png)
+
+> **Note**
+> Screenshots are taken from *Psych*, an American detective comedy-drama television series created by Steve Franks for USA Network.
 
 ## Motivation
 
