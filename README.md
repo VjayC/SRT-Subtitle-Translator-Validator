@@ -15,7 +15,7 @@ Original TV Show in English            |  Output of translated SRT in Tenglish
 :-------------------------:|:-------------------------:
 ![](./images/psych_english_translation.png)  |  ![](./images/psych_tenglish_translation.png)
 
-> **Note**
+> [!NOTE]
 > Screenshots are taken from *Psych*, an American detective comedy-drama television series created by Steve Franks for USA Network.
 
 ## Motivation
@@ -60,6 +60,8 @@ This is the successor to my original SRT Subtitle Validator, which could only va
 - **Progress Tracking:** Browser tab title shows current status (Translating, Translated, Fixing, Fixed, Error)
 - **Auto-scroll:** Automatically scrolls to validation results
 - **Dark/Light Mode:** Adapts to your system theme preference
+- **Configured Prompt Templates:** Loads your saved configuration and prompt to minimize manual entry
+- **File Drag & Drop:** Supports an alternative way to upload files
 
 ## Prerequisites
 
@@ -67,27 +69,7 @@ This is the successor to my original SRT Subtitle Validator, which could only va
 
 CLI Proxy API is required to access your Gemini subscription through an API interface.
 
-#### Install via Homebrew (Recommended)
-```bash
-brew install cliproxyapi
-```
-
-#### Or Build from Source
-1. Clone the repository:
-```bash
-git clone https://github.com/luispater/CLIProxyAPI.git
-cd CLIProxyAPI
-```
-
-2.  Build the application:
-    * **Linux, macOS:**
-        ```bash
-        go build -o cli-proxy-api ./cmd/server
-        ```
-    * **Windows:**
-        ```shell
-        go build -o cli-proxy-api.exe ./cmd/server
-        ```
+For installation instructions, please visit: https://help.router-for.me/introduction/quick-start.html
 
 ### Gemini Authentication
 
@@ -108,25 +90,12 @@ cliproxyapi --login --project_id <your_project_id>
 
 ### Configuration
 
-Create or edit your `config.yaml` file:
+Create or edit your `config.yaml` file.
 
-```yaml
-# Server port
-port: 8317
+For more information, please visit: https://help.router-for.me/configuration/basic.html or use the provided example `config.yaml`.
 
-# Authentication directory
-auth-dir: "~/.cli-proxy-api"
-
-# API keys for authentication
-api-keys:
-  - "your-api-key-here"  # Choose any value, must match the web app
-
-# Disable management panel (optional)
-remote-management:
-  disable-control-panel: true
-```
-
-**Important:** The `api-keys` value in `config.yaml` must match the API Key field in the web application.
+> [!IMPORTANT]
+> The `api-keys` value in `config.yaml` must match the API Key field in the web application. The key `dummy` is used by default if the field is left blank.
 
 ## Usage
 
@@ -172,7 +141,63 @@ You can also remove any script (except special characters and line breaks) by cl
 
 Write your translation instructions in the prompt field. You can use markdown formatting and switch to **Markdown View** to preview how it renders.
 
-**Example Prompt:**
+#### Using Configured Prompt Templates
+
+For reusable prompts with dynamic values, create a template file with optional configuration:
+
+1. Create a `.txt` file with placeholders using `{{Variable Name}}` syntax
+2. Click **"📥 Import Template"** or drag and drop the template file onto the prompt section
+3. Fill in the template variables that appear
+4. Click **"Apply Template"** to generate your final prompt
+
+**Basic Template Example:**
+```markdown
+You are translating subtitles for {{Show Name}}, Season {{Season}}, Episode {{Episode}}.
+
+Translate from {{Source Language}} to {{Target Language}}.
+
+**Style Guidelines:**
+- Use {{Formality Level}} language
+- Keep character names in {{Name Language}}
+
+[Rest of your translation instructions...]
+```
+
+When imported, you'll be prompted to fill in: Show Name, Season, Episode, Source Language, Target Language, Formality Level, and Name Language.
+
+**Configured Template Example (Advanced):**
+
+For even more automation, add a `@Config` header to pre-configure settings:
+```markdown
+@Config
+{{http://localhost:8317/v1/chat/completions}}
+{{gemini-3-pro-preview}}
+{{Basic Latin}} {{Latin Supplement}} {{Telugu}}
+{{TV show}} {{Psych}} {{2006}} {{, S01E01}} {{, (Title)}}
+
+You are translating subtitles for the {{Enter movie or TV show}} {{Movie/TV Show Name}} ({{Release Year}}){{Season/Episode Number}}{{Episode Title}}.
+
+[Rest of your translation instructions...]
+```
+
+**Configuration Format:**
+- **Line 1:** `@Config` marker
+- **Line 2:** API endpoint URL
+- **Line 3:** Model name
+- **Line 4:** Allowed script ranges (language scripts or Unicode ranges)
+- **Line 5:** Default values for placeholders in the prompt body (must match the order and number of unique placeholders)
+- **Line 6:** Empty line (required separator)
+- **Lines 7+:** Your prompt template with `{{placeholders}}`
+
+When a configured template is imported:
+- API endpoint, model, and script ranges are automatically applied
+- Template inputs are pre-filled with the default values
+- You can still modify any values before applying
+
+> [!TIP]
+> See `Example Config Prompt Template.txt` for a complete configured template example.
+
+**Example Non-Template Prompt:**
 ```markdown
 You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in timestamps and script usage. Failure to adhere to these rules is not an option.
 
@@ -182,23 +207,21 @@ You are a hyper-vigilant subtitle translator and formatter. Your task is to tran
 
 **ABSOLUTE TIMESTAMP INTEGRITY:** This is the most critical rule. The timestamps in the output file MUST BE an exact, character-for-character, byte-for-byte copy of the timestamps in the source file. Treat the entire timestamp line (HH:MM:SS,ms --> HH:MM:SS,ms) as a single, unchangeable piece of data—a unique ID that must be copied exactly as it appears. Do not parse, interpret, round, or alter it in any way. A single missing or incorrect character is a total failure.
 
-✅ **CORRECT:** 00:14:56,928 (From Input SRT)
-❌ **INCORRECT:** 00:14:6,928 (Single Digit Missing)
-❌ **INCORRECT:** 00:14:46,928 (Single Digit Mismatch)
+✅ **CORRECT:** 00:14:56,928 (From Input SRT)  
+❌ **INCORRECT:** 00:14:6,928 (Single Digit Missing)  
+❌ **INCORRECT:** 00:14:46,928 (Single Digit Mismatch)  
 ❌ **INCORRECT:** 00:14:33,928 (Double Digit Mismatch)
 
 **PERFECT LINE BREAKS:** Preserve the original line breaks within each subtitle entry. If the original English subtitle has two lines, the translated Tenglish subtitle must also have two lines. Do not merge lines.
 
-**STRICT SCRIPT CONTROL:**
-
-- The final text may ONLY contain characters from the English (Latin) alphabet and the Telugu script.
-- ABSOLUTELY NO characters from any other script are allowed. This includes, but is not limited to, Devanagari (Hindi: नी), Gujarati (હ), Japanese (気), Tamil (த), Kannada (ಚಿ), or Malayalam (മ). Any character not in the standard English or Telugu alphabets is forbidden.
-
-**"TENGLISH" STYLE:**
-
-- Keep common English words, names (Shawn Spencer), and simple phrases (Who's in there?) in English.
-- Translate complex English words (requisitioning) into simple, casual Telugu.
-- Do not transliterate Telugu words into English letters. Use the Telugu script.
+**SCRIPT & LANGUAGE RULES (CRITICAL):**
+- **Definition of "Tenglish":** This is a Mixed-Script translation.
+    - English Words: Keep common English words, names (Shawn Spencer), and simple phrases (Who's in there?) in English.
+    - Telugu Words: Translate complex concepts and words (requisitioning) into casual Telugu.
+- **NO ROMANIZATION:** Do not transliterate Telugu words into English letters. Use the Telugu script.
+    - ❌ **INCORRECT:** "Nenu ready ga unnanu."
+    - ✅ **CORRECT:** "నేను ready గా ఉన్నాను."
+- **ALLOWED CHARACTERS:** The text may ONLY contain Standard English (Latin) characters and Telugu script characters. ABSOLUTELY NO characters from any other script are allowed. This includes, but is not limited to, Devanagari (Hindi: नी), Gujarati (હ), Japanese (気), Tamil (த), Kannada (ಚಿ), or Malayalam (മ).
 
 ### Error Correction Examples (Pay close attention to these):
 
@@ -210,6 +233,8 @@ This table shows the exact type of script errors to avoid and their correct repl
 | a killer's window | ఒక હત్యకుడి window (Uses Gujarati હ) | ఒక హత్యకుడి window (Uses correct Telugu హ) |
 | if you don't mind | మీరు気に పట్టించుకోకపోతే (Uses Japanese 気) | మీరు పట్టించుకోకపోతే (Uses correct Telugu script only) |
 | I am not a suspect | నేను suspect नी కాదు (Uses Devanagari नी) | నేను suspect ని కాదు (Uses correct Telugu ని) |
+| How are you? | Ela unnavu? (Romanized - BANNED) | ఎలా ఉన్నావు? |
+| Stop the car. | Car aapu. (Romanized - BANNED) | Car ఆపు. |
 
 ### Final Verification Protocol:
 
@@ -231,6 +256,9 @@ Please begin the translation of the attached file, adhering strictly to these en
    - Send the file to Gemini for translation
    - Automatically validate the output
    - Show any errors found
+
+> [!TIP]
+> You can drag and drop files directly onto the Prompt Template and Subtitle file upload buttons.
 
 ### 7. Handle Partial Translations
 
@@ -292,6 +320,13 @@ You can also add any custom Unicode range or character.
 - Ensure the API Key in the web app matches `api-keys` in `config.yaml`
 - Try re-logging in: `cliproxyapi --login`
 
+### "API Error: 503 Service Unavailable"
+- The Gemini service may be temporarily overloaded or down
+- Wait a few minutes and try again
+- Check Gemini's status at [status.cloud.google.com](https://status.cloud.google.com)
+- If persistent, try switching to a different model (e.g., `gemini-2.5-flash`)
+- Verify your CLI Proxy API connection: restart the server and check logs
+
 ### Script validation errors persist after fixing
 - Some errors may require manual correction
 - Check that you've added all necessary language scripts (e.g., Telugu)
@@ -308,9 +343,11 @@ You can also add any custom Unicode range or character.
 Edit the Model Name field to use other models:
 - `gemini-2.5-flash`: Faster, cheaper, good for simple translations
 - `gemini-2.5-pro`: More accurate, better for complex translations
-- See [CLI Proxy API docs](https://github.com/router-for-me/CLIProxyAPI) for all supported models
+- `gemini-3-pro-preview`: Latest model, best quality and reasoning
+- See [CLI Proxy API documentation](https://help.router-for.me/introduction/what-is-cliproxyapi.html) for all supported models
 
-**Important:** The application has only been tested with `gemini-2.5-pro`
+> [!WARNING]
+> The application has only been tested with `gemini-3-pro-preview`/`gemini-2.5-pro` and only uses `gemini-2.5-flash` to detect the target translation language for the purpose of naming the output SRT file.
 
 ### Custom Unicode Ranges
 
@@ -328,7 +365,8 @@ Contributions are welcome! Some areas for improvement:
 - Export validation reports as JSON/CSV
 - Integration with other LLM providers
 
-**Note:** Gemini was chosen due to a comparatively higher output token limit for its web client
+> [!NOTE]
+> The Gemini LLM was chosen due to a comparatively higher output token limit for its web client.
 
 ## Credits
 

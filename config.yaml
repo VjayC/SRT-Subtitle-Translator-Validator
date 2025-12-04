@@ -1,0 +1,44 @@
+# Port number, CLIProxyAPI runs an HTTP server and needs a port number for access
+port: 8317
+
+# Directory for storing authentication files, used to store authentication files
+# for Gemini CLI, Gemini Web, Qwen Code, and Codex.
+# The default setting is the .cli-proxy-api folder in your current account
+# directory, which is compatible with Windows and Linux environments.
+# The program will automatically create this folder when it starts for the first
+# time.
+# The default in Windows is C:\Users\your_username\.cli-proxy-api
+# The default in Linux is /home/your_username/.cli-proxy-api
+# If you use a non-default location in a Windows environment, you need to
+# modify it in this format "Z:\\CLIProxyAPI\\auths"
+auth-dir: "~/.cli-proxy-api"
+
+# The keys required for various AI clients to access CLIProxyAPI are set here.
+# Do not confuse them with the various keys below.
+# In layman's terms, the Key here is what CLIProxyAPI needs to set as a
+# server.
+# The various keys below are what CLIProxyAPI needs as a client to access the
+# server.
+api-keys:
+  - "dummy"  # Choose any value, must match the web app
+
+# Remote management configuration, used with EasyCLI or WebUI
+remote-management:
+  # Switch to enable remote management. If you deploy it on a server,
+  # you need to set it to true to use EasyCLI or WebUI to connect to CLIProxyAPI
+  # for management.
+  # If you only use the API for local management, you can keep it as false.
+  allow-remote: false
+
+  # If you want to use EasyCLI or WebUI to manage CLIProxyAPI through the API,
+  # you must set a Key.
+  # If it is not set, it is considered that the API management function is
+  # disabled, and you cannot use EasyCLI or WebUI to connect.
+  # If you do not need to use EasyCLI or WebUI for management, you can leave it
+  # blank.
+  secret-key: ""
+
+  # Switch to integrate WebUI.
+  # Set to false, you can open WebUI through
+  # http://YOUR_SERVER_IP:8317/management.html
+  disable-control-panel: true

@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRT Translator & Validator</title>
+
+    <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3CclipPath id='border-clip'%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M10 35 Q20 31 30 35 T50 35 T70 35 T90 35 M10 50 Q20 46 30 50 T50 50 T70 50 T90 50 M10 65 Q20 61 30 65 T50 65 T70 65 T90 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none' clip-path='url(%23border-clip)'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3CclipPath id='border-clip'%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M10 35 Q20 31 30 35 T50 35 T70 35 T90 35 M10 50 Q20 46 30 50 T50 50 T70 50 T90 50 M10 65 Q20 61 30 65 T50 65 T70 65 T90 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none' clip-path='url(%23border-clip)'/%3E%3C/svg%3E">
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --bg-color: #000000;
@@ -121,6 +126,16 @@
             color: var(--text-primary);
             font-size: 14px;
         }
+        
+        /* Style for template input labels */
+        .template-var-label {
+            display: block;
+            margin-bottom: 8px;
+            margin-top: 15px; /* Add spacing between inputs */
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
 
         .prompt-textarea {
             width: 100%;
@@ -162,6 +177,29 @@
         .prompt-preview p { margin-bottom: 1em; }
 
         .prompt-preview ul, .prompt-preview ol { margin-left: 1.5em; margin-bottom: 1em; }
+
+        .prompt-preview ul { 
+            list-style-type: disc; 
+            margin-left: 20px; 
+        }
+
+        /* This targets a list INSIDE a list (indented) */
+        .prompt-preview ul ul { 
+            list-style-type: circle; /* Hollow bullet */
+            margin-left: 20px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        /* Optional: Level 3 nesting */
+        .prompt-preview ul ul ul { 
+            list-style-type: square; 
+        }
+
+        /* Ensure list items have some breathing room */
+        .prompt-preview li {
+            margin-bottom: 4px;
+        }
 
         .prompt-preview code {
             background: var(--results-bg);
@@ -262,6 +300,11 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+        }
+        
+        .editor-header-buttons {
+            display: flex;
+            gap: 10px;
         }
 
         .editor-title {
@@ -598,6 +641,23 @@
             gap: 15px;
             margin-top: 20px;
         }
+
+        /* --- NEW DRAG-AND-DROP STYLES --- */
+
+        /* Style for the SRT file drop zone when dragging over */
+        .file-button.drag-over {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 2px dashed #667eea;
+            color: var(--text-primary);
+            transform: scale(1.02); /* Subtle grow effect */
+        }
+        
+        /* Style for the Template drop zone when dragging over */
+        .config-section.drag-over-template {
+            border: 2px dashed #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+            background: var(--container-bg); /* Ensure background stays consistent */
+        }
     </style>
 </head>
 <body>
@@ -646,15 +706,25 @@
             </div>
         </div>
 
+        <input type="file" id="template-file-input" class="file-input" accept=".txt">
+
         <div class="config-section">
             <div class="editor-header">
                 <label class="config-label" style="margin: 0;">Translation Prompt</label>
-                <button id="markdown-toggle-btn" class="action-button secondary" style="width: auto; padding: 8px 16px; margin: 0; font-size: 14px;">
-                    👁️ Markdown View
-                </button>
+                <div class="editor-header-buttons">
+                    <button id="import-template-btn" class="action-button secondary" style="width: auto; padding: 8px 16px; margin: 0; font-size: 14px;">
+                        📥 Import Template
+                    </button>
+                    <button id="markdown-toggle-btn" class="action-button secondary" style="width: auto; padding: 8px 16px; margin: 0; font-size: 14px;">
+                        👁️ Markdown View
+                    </button>
+                </div>
             </div>
-            <textarea id="prompt-text" class="prompt-textarea" placeholder="Enter your translation instructions here..."></textarea>
+            <textarea id="prompt-text" class="prompt-textarea" placeholder="Enter your translation instructions here, or import a template..."></textarea>
             <div id="prompt-preview" class="prompt-preview" style="display: none;"></div>
+            
+            <div id="template-inputs-container" class="config-section" style="display: none; margin-top: 20px; background: var(--container-bg);">
+                </div>
         </div>
 
         <div class="file-input-container" style="grid-template-columns: 1fr;">
@@ -714,11 +784,38 @@
         let translationLanguage = ''; // Stores the detected language name
         let isPartialTranslation = false; // Tracks if translation is incomplete
         const originalTitle = document.title; // Store original title
+        let rawTemplateText = ''; // Stores the raw template text
+        let titleAnimationInterval = null; // Stores the timer ID for the title animation
 
         function setPageTitle(status) {
+            // 1. Always clear any existing animation timer first
+            if (titleAnimationInterval) {
+                clearInterval(titleAnimationInterval);
+                titleAnimationInterval = null;
+            }
+
             if (status) {
-                document.title = `${status} - ${originalTitle}`;
+                // 2. Check if the status implies a loading state (ends with "...")
+                if (status.endsWith('...')) {
+                    const baseText = status.slice(0, -3); // Remove the dots to get the base word (e.g., "Translating")
+                    let frame = 0;
+
+                    // Set initial title immediately
+                    document.title = baseText;
+
+                    // Start the animation loop
+                    titleAnimationInterval = setInterval(() => {
+                        frame = (frame + 1) % 4; // Cycles 0, 1, 2, 3
+                        const dots = '.'.repeat(frame); // Creates "", ".", "..", or "..."
+                        document.title = `${baseText}${dots}`;
+                    }, 500); // 500ms speed (adjust as desired)
+                    
+                } else {
+                    // 3. Static status (e.g., "Error!", "Fixed") - Show ONLY the status
+                    document.title = status;
+                }
             } else {
+                // 4. Reset to the original website title
                 document.title = originalTitle;
             }
         }
@@ -862,6 +959,72 @@
             { name: 'Latin Supplement', start: 0x00A0, end: 0x00FF, removable: true }
         ];
 
+        // Helper function to validate and parse a script string (Name or Hex Range)
+        function parseScriptInput(inputString) {
+            const value = inputString.trim();
+            
+            // 1. Check if it's a named script in the database
+            // We search case-insensitively against keys in scriptRanges
+            const scriptName = Object.keys(scriptRanges).find(key => key.toLowerCase() === value.toLowerCase());
+            if (scriptName) {
+                return {
+                    name: scriptName,
+                    start: scriptRanges[scriptName].start,
+                    end: scriptRanges[scriptName].end,
+                    removable: true
+                };
+            }
+
+            // 2. Check Custom Hex Ranges (Logic refactored from existing button)
+            const upperValue = value.toUpperCase();
+            let start, end, name;
+            let match;
+
+            // Format 1: U+0C00-U+0C7F
+            match = upperValue.match(/U\+([0-9A-F]+)-U\+([0-9A-F]+)/);
+            if (match) {
+                start = parseInt(match[1], 16);
+                end = parseInt(match[2], 16);
+                name = `Custom Range U+${match[1]}-U+${match[2]}`;
+            }
+
+            // Format 2: 0C00-0C7F
+            if (!match) {
+                match = upperValue.match(/([0-9A-F]+)-([0-9A-F]+)/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = parseInt(match[2], 16);
+                    name = `Custom Range U+${match[1]}-U+${match[2]}`;
+                }
+            }
+
+            // Format 3: U+0C00 (single character)
+            if (!match) {
+                match = upperValue.match(/U\+([0-9A-F]+)/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = start;
+                    name = `Custom Character U+${match[1]}`;
+                }
+            }
+
+            // Format 4: 0C00 (single character, no U+)
+            if (!match) {
+                match = upperValue.match(/^([0-9A-F]+)$/);
+                if (match) {
+                    start = parseInt(match[1], 16);
+                    end = start;
+                    name = `Custom Character U+${match[1]}`;
+                }
+            }
+
+            if (match && !isNaN(start) && !isNaN(end) && start <= end) {
+                return { name, start, end, removable: true };
+            }
+
+            return null; // Invalid
+        }
+
         function logRawOutput(content) {
             const now = new Date();
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -918,95 +1081,161 @@
                 editorSection.classList.add('show');
                 // Only auto-resize if explicitly requested
                 if (shouldResize) {
-                    autoResizeTextarea(editor);
+                    // Pass 'true' to force a shrink/reset to calculate exact height
+                    autoResizeTextarea(editor, true); 
                 }
             }
         }
 
-        function autoResizeTextarea(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = (textarea.scrollHeight + 4) + 'px';
+        function autoResizeTextarea(textarea, shrink = false) {
+            // We use clientHeight to get the current *visible* height,
+            // which doesn't include the border. scrollHeight *does*.
+            // This is a more accurate comparison.
+            const currentHeight = textarea.clientHeight;
+            const scrollHeight = textarea.scrollHeight;
+
+            if (shrink) {
+                // On 'blur', we're allowed to shrink.
+                // Reset to auto and set the new correct height.
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            } else if (scrollHeight > currentHeight) {
+                // On 'input', only grow if the content (scrollHeight)
+                // is larger than the current visible height.
+                textarea.style.height = scrollHeight + 'px';
+            }
+            // If scrollHeight <= currentHeight and shrink is false, do nothing.
         }
 
         function parseMarkdown(markdown) {
-            let html = markdown;
+            if (!markdown) return '';
+            
+            // 1. Initial cleanup
+            let html = markdown
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
 
-            // Escape HTML but preserve line breaks
-            html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // 2. Block Elements (Code & Tables)
+            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
 
-            // Tables (must be processed before other elements)
             const tableRegex = /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/gm;
             html = html.replace(tableRegex, function(match, headerRow, bodyRows) {
-                // Process header
                 const headers = headerRow.split('|').map(h => h.trim()).filter(h => h);
                 const headerHtml = '<tr>' + headers.map(h => '<th>' + h + '</th>').join('') + '</tr>';
-                
-                // Process body rows
                 const rows = bodyRows.trim().split('\n');
                 const bodyHtml = rows.map(row => {
                     const cells = row.split('|').map(c => c.trim()).filter(c => c);
-                    return '<tr>' + cells.map(c => {
-                        // Convert &lt;br&gt; back to actual line breaks in tables
-                        const content = c.replace(/&lt;br&gt;/g, '<br>');
-                        return '<td>' + content + '</td>';
-                    }).join('') + '</tr>';
+                    return '<tr>' + cells.map(c => '<td>' + c.replace(/&lt;br&gt;/g, '<br>') + '</td>').join('') + '</tr>';
                 }).join('');
-                
                 return '<table>' + headerHtml + bodyHtml + '</table>';
             });
 
-            // Headers
+            // 3. ROBUST LIST PARSER (State Machine)
+            let lines = html.split('\n');
+            let result = [];
+            let listStack = []; 
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                let match = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+
+                if (match) {
+                    let indent = match[1].length;
+                    let isOrdered = /^\d+\./.test(match[2]);
+                    let listType = isOrdered ? 'ol' : 'ul';
+                    let content = match[3];
+
+                    if (listStack.length === 0) {
+                        result.push(`<${listType}>`);
+                        listStack.push({ type: listType, indent: indent });
+                    } else {
+                        let lastItem = listStack[listStack.length - 1];
+
+                        if (indent > lastItem.indent) {
+                            result.push(`<${listType}>`);
+                            listStack.push({ type: listType, indent: indent });
+                        } else if (indent < lastItem.indent) {
+                            while (listStack.length > 0 && indent < listStack[listStack.length - 1].indent) {
+                                let closed = listStack.pop();
+                                result.push(`</${closed.type}>`);
+                            }
+                            if (listStack.length > 0 && listStack[listStack.length - 1].type !== listType) {
+                                let closed = listStack.pop();
+                                result.push(`</${closed.type}><${listType}>`);
+                                listStack.push({ type: listType, indent: indent });
+                            }
+                        } else {
+                            if (lastItem.type !== listType) {
+                                listStack.pop();
+                                result.push(`</${lastItem.type}><${listType}>`);
+                                listStack.push({ type: listType, indent: indent });
+                            }
+                        }
+                    }
+                    result.push(`<li>${content}</li>`);
+                } else {
+                    while (listStack.length > 0) {
+                        let closed = listStack.pop();
+                        result.push(`</${closed.type}>`);
+                    }
+                    result.push(line);
+                }
+            }
+            while (listStack.length > 0) {
+                let closed = listStack.pop();
+                result.push(`</${closed.type}>`);
+            }
+            html = result.join('\n');
+
+            // 4. Inline Formatting
             html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
             html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
             html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-
-            // Bold
+            html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
             html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-
-            // Italic
             html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
             html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-            // Code blocks
-            html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-
-            // Inline code
             html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-
-            // Links
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+            
+            // Handle Hard Breaks (Two spaces at end of line)
+            html = html.replace(/ {2,}\n/g, '<br>\n'); 
 
-            // Blockquotes
-            html = html.replace(/^&gt; (.*$)/gim, '<blockquote>$1</blockquote>');
+            // 5. Paragraphs (UPDATED: Grouping Logic)
+            let finalLines = html.split('\n');
+            let groupedHtml = [];
+            let pBuffer = []; // Buffer for current paragraph lines
 
-            // Unordered lists
-            html = html.replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>');
-            html = html.replace(/^- (.*$)/gim, '<ul><li>$1</li></ul>');
-            html = html.replace(/<\/ul>\n<ul>/g, '');
+            const flushBuffer = () => {
+                if (pBuffer.length > 0) {
+                    // Join buffer lines with space/newline so they flow together
+                    groupedHtml.push(`<p>${pBuffer.join('\n')}</p>`); 
+                    pBuffer = [];
+                }
+            };
 
-            // Ordered lists
-            html = html.replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>');
-            html = html.replace(/<\/ol>\n<ol>/g, '');
+            const blockTags = ['<h', '<ul', '<ol', '<li', '<block', '<pre', '<table', '<tr', '<td', '<th', '<div', '</ul', '</ol', '</li', '</table', '</block', '</pre', '</div', '</h', '</tr', '</td', '</th'];
+            const isBlock = (line) => blockTags.some(tag => line.trim().startsWith(tag));
 
-            // Paragraphs
-            html = html.replace(/\n\n/g, '</p><p>');
-            html = '<p>' + html + '</p>';
+            for (let i = 0; i < finalLines.length; i++) {
+                let line = finalLines[i];
 
-            // Clean up empty paragraphs and wrapping issues
-            html = html.replace(/<p><\/p>/g, '');
-            html = html.replace(/<p>(<h[1-6]>)/g, '$1');
-            html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<ul>)/g, '$1');
-            html = html.replace(/(<\/ul>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<ol>)/g, '$1');
-            html = html.replace(/(<\/ol>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<blockquote>)/g, '$1');
-            html = html.replace(/(<\/blockquote>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<pre>)/g, '$1');
-            html = html.replace(/(<\/pre>)<\/p>/g, '$1');
-            html = html.replace(/<p>(<table>)/g, '$1');
-            html = html.replace(/(<\/table>)<\/p>/g, '$1');
+                if (isBlock(line) || line.trim() === '') {
+                    // If we hit a block element or empty line, flush the current paragraph
+                    flushBuffer();
+                    if (line.trim() !== '') {
+                        groupedHtml.push(line);
+                    }
+                } else {
+                    // It's a text line, add to buffer
+                    pBuffer.push(line);
+                }
+            }
+            flushBuffer(); // Flush any remaining text at the end
+
+            html = groupedHtml.join('\n');
 
             return html;
         }
@@ -1057,28 +1286,357 @@
             return errors;
         }
 
+        function handleSRTFile(file) {
+            if (!file) return;
+
+            // Check if the file name ends with .srt (case-insensitive)
+            if (!file.name.toLowerCase().endsWith('.srt')) {
+                alert('Invalid file type. Please upload a .srt file.');
+                return;
+            }
+
+            sourceFileName = file.name.replace(/\.srt$/i, ''); // Remove .srt extension
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                sourceFile = event.target.result;
+                parsedSource = parseSRT(sourceFile);
+                document.getElementById('srt-file-button').classList.add('selected');
+                document.getElementById('srt-file-button').textContent = `✓ ${file.name}`;
+                checkCanTranslate();
+            };
+            reader.readAsText(file);
+        }
+
+        // Updated 'change' listener to use the handler
         document.getElementById('srt-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                sourceFileName = file.name.replace(/\.srt$/i, ''); // Remove .srt extension
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    sourceFile = event.target.result;
-                    parsedSource = parseSRT(sourceFile);
-                    document.getElementById('srt-file-button').classList.add('selected');
-                    document.getElementById('srt-file-button').textContent = `✓ ${file.name}`;
-                    checkCanTranslate();
-                };
-                reader.readAsText(file);
+                handleSRTFile(file);
             }
+            // Reset file input
+            e.target.value = null;
         });
 
         document.getElementById('prompt-text').addEventListener('input', function() {
             promptText = this.value;
             checkCanTranslate();
             // Auto-resize to fit content
-            autoResizeTextarea(this);
+            autoResizeTextarea(this, false);
         });
+
+        document.getElementById('prompt-text').addEventListener('blur', function() {
+            // When the user clicks away, call the resize function
+            // and tell it that it's OK to shrink.
+            autoResizeTextarea(this, true);
+        });
+
+        // --- NEW TEMPLATE FUNCTIONALITY ---
+
+        document.getElementById('import-template-btn').addEventListener('click', function() {
+            // Trigger the hidden file input
+            document.getElementById('template-file-input').click();
+        });
+
+        function handleTemplateFile(file) {
+            if (!file) return;
+            
+            // Check if the file name ends with .txt
+            if (!file.name.toLowerCase().endsWith('.txt')) {
+                alert('Invalid file type. Please upload a .txt file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const fullContent = event.target.result; // Keep raw content with line breaks
+                const lines = fullContent.split(/\r?\n/); // Split by newline
+
+                // Check for @Config
+                if (lines[0].trim() === '@Config') {
+                    // --- VALIDATION START ---
+                    
+                    // Check structural integrity: @Config + 4 lines + 1 empty line
+                    if (lines.length < 6 || lines[5].trim() !== '') {
+                        alert('Invalid Template Config: The @Config header must be followed by exactly 4 lines of configuration and then an empty line.');
+                        return;
+                    }
+
+                    // Helper regex to find {{...}}
+                    const extractTags = (str) => [...str.matchAll(/\{\{(.+?)\}\}/g)].map(m => m[1]);
+
+                    // Line 1: Endpoint (Exactly one pair)
+                    const line1Tags = extractTags(lines[1]);
+                    if (line1Tags.length !== 1 || !line1Tags[0].trim()) {
+                        alert('Invalid Template Config (Line 2): Must contain exactly one non-empty {{Endpoint URL}}.');
+                        return;
+                    }
+
+                    // Line 2: Model (Exactly one pair)
+                    const line2Tags = extractTags(lines[2]);
+                    if (line2Tags.length !== 1 || !line2Tags[0].trim()) {
+                        alert('Invalid Template Config (Line 3): Must contain exactly one non-empty {{Model Name}}.');
+                        return;
+                    }
+
+                    // Line 3: Scripts (At least one pair, valid scripts)
+                    const line3Tags = extractTags(lines[3]);
+                    if (line3Tags.length < 1) {
+                        alert('Invalid Template Config (Line 4): Must contain at least one {{Script}} definition.');
+                        return;
+                    }
+
+                    const parsedNewScripts = [];
+                    for (const tag of line3Tags) {
+                        const parsed = parseScriptInput(tag);
+                        if (!parsed) {
+                            alert(`Invalid Template Config (Line 4): "${tag}" is not a valid Script Name or Unicode Range.`);
+                            return;
+                        }
+                        parsedNewScripts.push(parsed);
+                    }
+
+                    // Get body text (everything after line 6)
+                    // We join back from line 6 onwards.
+                    const bodyText = lines.slice(6).join('\n');
+                    rawTemplateText = bodyText; // Store ONLY the body text for substitution later
+
+                    // Check Placeholders in body
+                    const placeholderRegex = /\{\{([\s\S]+?)\}\}/g;
+                    const bodyPlaceholders = [...bodyText.matchAll(placeholderRegex)];
+                    
+                    // Get unique variable names (logic copied from parseAndDisplayTemplateInputs)
+                    const uniqueNames = [];
+                    const seen = new Set();
+                    for (const match of bodyPlaceholders) {
+                        const name = match[1].trim();
+                        if (!seen.has(name)) {
+                            seen.add(name);
+                            uniqueNames.push(name);
+                        }
+                    }
+
+                    // Line 4: Default Values (Must match unique placeholder count)
+                    // Note: We allow empty values inside brackets {{}}, e.g., {{}}
+                    const line4Tags = extractTags(lines[4]); 
+                    // extractTags filters based on content, but regex `.+?` requires at least 1 char. 
+                    // If the user puts {{}}, matchAll might fail with .+? depending on engine, 
+                    // but standard regex usually wants something.
+                    // We need a regex that allows empty: `\{\{(.*?)\}\}`
+                    const extractTagsAllowEmpty = (str) => [...str.matchAll(/\{\{(.*?)\}\}/g)].map(m => m[1]);
+                    const line4Values = extractTagsAllowEmpty(lines[4]);
+
+                    if (line4Values.length !== uniqueNames.length) {
+                        alert(`Invalid Template Config (Line 5): Found ${line4Values.length} default values, but the prompt has ${uniqueNames.length} unique placeholders.`);
+                        return;
+                    }
+
+                    // --- VALIDATION PASSED: APPLY CONFIG ---
+
+                    // 1. Set API Endpoint
+                    const newEndpoint = line1Tags[0].trim();
+                    document.getElementById('api-endpoint').value = newEndpoint;
+
+                    // 2. Set Model Name
+                    const newModel = line2Tags[0].trim();
+                    document.getElementById('model-name').value = newModel;
+
+                    // 3. Set Active Scripts
+                    activeScripts = []; // Clear existing
+                    parsedNewScripts.forEach(s => activeScripts.push(s));
+                    updateActiveScriptsUI();
+
+                    // 4. Populate Template Inputs (Pass defaults)
+                    // We pass the raw values (untrimmed) as requested for defaults
+                    parseAndDisplayTemplateInputs(rawTemplateText, line4Values);
+
+                } else {
+                    // No @Config detected, proceed as before
+                    rawTemplateText = fullContent;
+                    parseAndDisplayTemplateInputs(rawTemplateText, []);
+                }
+            };
+            reader.readAsText(file);
+            // Scroll to bottom of page
+            setTimeout(() => {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }, 100);
+        }
+
+        // Updated 'change' listener to use the handler
+        document.getElementById('template-file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleTemplateFile(file);
+            }
+            // Reset file input
+            e.target.value = null;
+        });
+
+        // Updated function signature to accept defaultValues
+        function parseAndDisplayTemplateInputs(templateContent, defaultValues = []) {
+            const placeholderRegex = /\{\{([\s\S]+?)\}\}/g;
+            const placeholders = [...templateContent.matchAll(placeholderRegex)];
+            const container = document.getElementById('template-inputs-container');
+
+            // Handle case where text exists but has no placeholders
+            if (placeholders.length === 0) {
+                alert('Invalid Template: No placeholders found.\nPlease use the {{Text}} format.');
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            // Get unique variable names
+            const uniqueNames = [];
+            const seen = new Set();
+            for (const match of placeholders) {
+                const name = match[1].trim();
+                if (!seen.has(name)) {
+                    seen.add(name);
+                    uniqueNames.push(name);
+                }
+            }
+            
+            // Build the HTML for the inputs
+            let inputsHtml = `<h3 style="color: var(--text-primary); margin-bottom: 15px;">Fill out the Template</h3>`;
+            
+            inputsHtml += uniqueNames.map((name, index) => {
+                const prefillValue = (defaultValues && defaultValues[index]) ? defaultValues[index] : '';
+                
+                return `
+                    <label class="template-var-label" for="template-var-${name.replace(/\s/g, '_')}">${name}:</label>
+                    <input type="text" id="template-var-${name.replace(/\s/g, '_')}" 
+                        class="config-input" 
+                        data-varname="${name}" 
+                        value="${prefillValue}"
+                        placeholder="Enter here...">
+                `;
+            }).join('');
+
+            // Add Apply AND Cancel buttons in a flex container
+            inputsHtml += `
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="apply-template-btn" class="action-button" style="width: auto; padding: 10px 20px; font-size: 15px;">
+                        Apply Template
+                    </button>
+                    <button id="cancel-template-btn" class="action-button secondary" style="width: auto; padding: 10px 20px; font-size: 15px; border-color: var(--error-color); color: var(--error-color);">
+                        Cancel
+                    </button>
+                </div>
+            `;
+            
+            container.innerHTML = inputsHtml;
+            container.style.display = 'block';
+
+            // --- Apply Button Logic ---
+            document.getElementById('apply-template-btn').addEventListener('click', () => {
+                let substitutedText = rawTemplateText;
+                const inputs = container.querySelectorAll('.config-input[data-varname]');
+
+                inputs.forEach(input => {
+                    const varName = input.dataset.varname;
+                    const value = input.value;
+                    const regex = new RegExp(`\\{\\{\\s*${varName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*\\}\\}`, 'g');
+                    substitutedText = substitutedText.replace(regex, value);
+                });
+
+                const promptEditor = document.getElementById('prompt-text');
+                promptEditor.value = substitutedText;
+                promptText = substitutedText;
+
+                autoResizeTextarea(promptEditor);
+                checkCanTranslate();
+
+                container.style.display = 'none';
+                container.innerHTML = '';
+                rawTemplateText = '';
+                // Reset file input so the same file can be selected again
+                document.getElementById('template-file-input').value = '';
+            });
+
+            // --- Cancel Button Logic ---
+            document.getElementById('cancel-template-btn').addEventListener('click', () => {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                rawTemplateText = '';
+                // Reset file input so the same file can be selected again
+                document.getElementById('template-file-input').value = '';
+            });
+        }
+
+        // --- END OF NEW TEMPLATE FUNCTIONALITY ---
+
+        // --- NEW: DRAG AND DROP FUNCTIONALITY ---
+
+        // Prevent browser from opening dropped files globally
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        }, false);
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+        }, false);
+
+        // --- 1. SRT File Drop Zone ---
+        const srtDropZone = document.getElementById('srt-file-button');
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            srtDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                srtDropZone.classList.add('drag-over');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            srtDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                srtDropZone.classList.remove('drag-over');
+            }, false);
+        });
+
+        srtDropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                handleSRTFile(files[0]); // Use our reusable handler
+            }
+        }, false);
+
+
+        // --- 2. Template File Drop Zone (on the prompt section) ---
+        const templateDropZone = document.getElementById('prompt-text').closest('.config-section');
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            templateDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Check if the dragged item is a file to avoid styling on text drag
+                if (e.dataTransfer.types.includes('Files')) {
+                    templateDropZone.classList.add('drag-over-template');
+                }
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            templateDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                templateDropZone.classList.remove('drag-over-template');
+            }, false);
+        });
+
+        templateDropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                handleTemplateFile(files[0]); // Use our reusable handler
+            }
+        }, false);
+
+        // --- END OF DRAG AND DROP FUNCTIONALITY ---
 
         // Script search functionality
         const scriptSearch = document.getElementById('script-search');
@@ -1189,72 +1747,22 @@
         // Add custom range functionality
         document.getElementById('add-custom-range').addEventListener('click', function() {
             const input = document.getElementById('custom-range-input');
-            const value = input.value.trim().toUpperCase();
+            // parseScriptInput handles trimming and uppercase internally
+            const parsedScript = parseScriptInput(input.value);
             
-            if (!value) {
-                alert('Please enter a Unicode range or character');
-                return;
-            }
-            
-            let start, end, name;
-            
-            // Try to parse different formats
-            // Format 1: U+0C00-U+0C7F
-            let match = value.match(/U\+([0-9A-F]+)-U\+([0-9A-F]+)/);
-            if (match) {
-                start = parseInt(match[1], 16);
-                end = parseInt(match[2], 16);
-                name = `Custom Range U+${match[1]}-U+${match[2]}`;
-            }
-            
-            // Format 2: 0C00-0C7F
-            if (!match) {
-                match = value.match(/([0-9A-F]+)-([0-9A-F]+)/);
-                if (match) {
-                    start = parseInt(match[1], 16);
-                    end = parseInt(match[2], 16);
-                    name = `Custom Range U+${match[1]}-U+${match[2]}`;
-                }
-            }
-            
-            // Format 3: U+0C00 (single character)
-            if (!match) {
-                match = value.match(/U\+([0-9A-F]+)/);
-                if (match) {
-                    start = parseInt(match[1], 16);
-                    end = start;
-                    name = `Custom Character U+${match[1]}`;
-                }
-            }
-            
-            // Format 4: 0C00 (single character, no U+)
-            if (!match) {
-                match = value.match(/^([0-9A-F]+)$/);
-                if (match) {
-                    start = parseInt(match[1], 16);
-                    end = start;
-                    name = `Custom Character U+${match[1]}`;
-                }
-            }
-            
-            if (!match || isNaN(start) || isNaN(end)) {
-                alert('Invalid format. Please use:\n- U+0C00-U+0C7F\n- 0C00-0C7F\n- U+0C00\n- 0C00');
-                return;
-            }
-            
-            if (start > end) {
-                alert('Start value must be less than or equal to end value');
+            if (!parsedScript) {
+                alert('Invalid format. Please use:\n- U+0C00-U+0C7F\n- 0C00-0C7F\n- U+0C00\n- 0C00\n- Or check that the start value is less than or equal to end value');
                 return;
             }
             
             // Check if already exists
-            if (activeScripts.some(s => s.start === start && s.end === end)) {
+            if (activeScripts.some(s => s.start === parsedScript.start && s.end === parsedScript.end)) {
                 alert('This range is already added');
                 return;
             }
             
             // Add to active scripts
-            activeScripts.push({ name, start, end, removable: true });
+            activeScripts.push(parsedScript);
             
             // Update UI
             updateActiveScriptsUI();
@@ -1327,7 +1835,7 @@
                     `${sub.index}\n${sub.timecode}\n${sub.text}`
                 ).join('\n\n');
                 
-                updateEditorContent(false); // Don't resize to prevent scroll jump
+                updateEditorContent();
                 
                 const translatedCount = parsedTranslated.length;
                 const totalCount = parsedSource.length;
@@ -1350,7 +1858,7 @@
                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }, 100);
                 
-                setPageTitle('Translating...');
+                setPageTitle('Partially Translated');
             } else {
                 // Complete translation
                 isPartialTranslation = false;
@@ -1373,8 +1881,8 @@
             setPageTitle('Translating...');
 
             try {
-                const apiEndpoint = document.getElementById('api-endpoint').value;
-                const modelName = document.getElementById('model-name').value;
+                const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
+                const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
                 const apiKey = document.getElementById('api-key').value || 'dummy';
                 const nextIndex = parsedTranslated[parsedTranslated.length - 1].index + 1;
 
@@ -1437,12 +1945,14 @@
             const actionButtons = document.getElementById('action-buttons');
             const translateBtn = this;
             const continueBtn = document.getElementById('continue-btn');
+            const editorSection = document.getElementById('editor-section');
             
             // Hide continue button if visible
             continueBtn.style.display = 'none';
             isPartialTranslation = false;
             
             actionButtons.style.display = 'none';
+            editorSection.classList.remove('show');
             results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
             results.classList.add('show');
 
@@ -1456,8 +1966,8 @@
             setPageTitle('Translating...');
 
             try {
-                const apiEndpoint = document.getElementById('api-endpoint').value;
-                const modelName = document.getElementById('model-name').value;
+                const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
+                const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
                 const apiKey = document.getElementById('api-key').value || 'dummy';
 
                 // First, detect the translation language
@@ -1545,7 +2055,7 @@
 
             if (parsedSource.length !== parsedTranslated.length) {
                 results.innerHTML = `
-                    <div class="error">❌ Error: Subtitle count mismatch!</div>
+                    <div class="error">❌ Critical Error: Subtitle count mismatch! Retranslation is recommended.</div>
                     <div class="mismatch-list">
                         <p>Source: ${parsedSource.length} subtitles</p>
                         <p>Translated: ${parsedTranslated.length} subtitles</p>
@@ -1733,8 +2243,8 @@
                         .join('\n\n');
                     
                     // Call Gemini to fix the errors
-                    const apiEndpoint = document.getElementById('api-endpoint').value;
-                    const modelName = document.getElementById('model-name').value;
+                    const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
+                    const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
                     const apiKey = document.getElementById('api-key').value || 'dummy';
 
                     const response = await fetch(apiEndpoint, {
@@ -1824,9 +2334,9 @@
             
             // Set title based on remaining errors
             if (remainingLanguageErrors.length === 0) {
-                setPageTitle('Fixed');
+                setPageTitle('Fixed!');
             } else {
-                setPageTitle('Translated');
+                setPageTitle('Translated!');
             }
         });
 
@@ -1837,7 +2347,7 @@
             }
 
             // Get model name and format it
-            const modelName = document.getElementById('model-name').value;
+            const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
             const formattedModelName = modelName
                 .split('-')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
