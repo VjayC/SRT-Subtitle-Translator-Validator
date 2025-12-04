@@ -214,13 +214,18 @@ You are a hyper-vigilant subtitle translator and formatter. Your task is to tran
 
 **PERFECT LINE BREAKS:** Preserve the original line breaks within each subtitle entry. If the original English subtitle has two lines, the translated Tenglish subtitle must also have two lines. Do not merge lines.
 
+**STRICT 1:1 CONTENT MAPPING (NO MERGING OR SHIFTING):**
+- **ONE SOURCE = ONE TARGET:** Content in Source ID `X` MUST appear *only* in Target ID `X`.
+- **ISOLATE SHORT LINES (CRITICAL):** Short interjections (e.g., "Pardon me", "Hey", "No") in ID `X+1` act as hard barriers. **NEVER** merge them into the previous block (ID `X`). They must remain standalone to prevent index shifting.
+- **NO "MERGING UP":** If ID `X` ends with `...` or an incomplete thought, leave it incomplete. **DO NOT** pull text from ID `X+1` to finish the sentence.
+- **NO COMPRESSION:** If the source has 3 blocks, the output must have 3 blocks. Merging `X` and `X+1` causes `X+2` to shift incorrectly, destroying synchronization.
+- **PRESERVE FRAGMENT ORDER (ANTI-SOV):** If "Action" is in ID `A` and "Reason" is in ID `B`, keep them separate. Do not move the "Reason" up to ID `A` to satisfy Telugu grammar.
+
 **SCRIPT & LANGUAGE RULES (CRITICAL):**
 - **Definition of "Tenglish":** This is a Mixed-Script translation.
     - English Words: Keep common English words, names (Shawn Spencer), and simple phrases (Who's in there?) in English.
     - Telugu Words: Translate complex concepts and words (requisitioning) into casual Telugu.
 - **NO ROMANIZATION:** Do not transliterate Telugu words into English letters. Use the Telugu script.
-    - ❌ **INCORRECT:** "Nenu ready ga unnanu."
-    - ✅ **CORRECT:** "నేను ready గా ఉన్నాను."
 - **ALLOWED CHARACTERS:** The text may ONLY contain Standard English (Latin) characters and Telugu script characters. ABSOLUTELY NO characters from any other script are allowed. This includes, but is not limited to, Devanagari (Hindi: नी), Gujarati (હ), Japanese (気), Tamil (த), Kannada (ಚಿ), or Malayalam (മ).
 
 ### Error Correction Examples (Pay close attention to these):
@@ -233,8 +238,7 @@ This table shows the exact type of script errors to avoid and their correct repl
 | a killer's window | ఒక હત్యకుడి window (Uses Gujarati હ) | ఒక హత్యకుడి window (Uses correct Telugu హ) |
 | if you don't mind | మీరు気に పట్టించుకోకపోతే (Uses Japanese 気) | మీరు పట్టించుకోకపోతే (Uses correct Telugu script only) |
 | I am not a suspect | నేను suspect नी కాదు (Uses Devanagari नी) | నేను suspect ని కాదు (Uses correct Telugu ని) |
-| How are you? | Ela unnavu? (Romanized - BANNED) | ఎలా ఉన్నావు? |
-| Stop the car. | Car aapu. (Romanized - BANNED) | Car ఆపు. |
+| I am ready. | Nenu ready ga unnanu. (Romanized - BANNED) | నేను ready గా ఉన్నాను. |
 
 ### Final Verification Protocol:
 
@@ -344,7 +348,7 @@ Edit the Model Name field to use other models:
 - `gemini-2.5-flash`: Faster, cheaper, good for simple translations
 - `gemini-2.5-pro`: More accurate, better for complex translations
 - `gemini-3-pro-preview`: Latest model, best quality and reasoning
-- See [CLI Proxy API documentation](https://help.router-for.me/introduction/what-is-cliproxyapi.html) for all supported models
+- See [CLI Proxy API documentation](https://help.router-for.me/introduction/what-is-cliproxyapi.html#supported-models) for all supported models
 
 > [!WARNING]
 > The application has only been tested with `gemini-3-pro-preview`/`gemini-2.5-pro` and only uses `gemini-2.5-flash` to detect the target translation language for the purpose of naming the output SRT file.
