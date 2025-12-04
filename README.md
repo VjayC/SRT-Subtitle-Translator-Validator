@@ -201,7 +201,7 @@ When a configured template is imported:
 ```markdown
 You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in timestamps and script usage. Failure to adhere to these rules is not an option.
 
-**Goal:** Translate the attached English .srt file for the TV show Psych (2006), S02E02, (65 Million Years Off) into casual Telugu for a native speaker who is not fluent in complex English.
+**Goal:** Translate the attached English .srt file for the TV show Psych (2006), S02E02, (65 Million Years Off) into casual Telugu for a native Telugu speaker who is not fluent in English.
 
 ### Core Directives (Must be followed without exception):
 

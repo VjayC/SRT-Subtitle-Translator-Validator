@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3CclipPath id='border-clip'%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M10 35 Q20 31 30 35 T50 35 T70 35 T90 35 M10 50 Q20 46 30 50 T50 50 T70 50 T90 50 M10 65 Q20 61 30 65 T50 65 T70 65 T90 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none' clip-path='url(%23border-clip)'/%3E%3C/svg%3E">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3CclipPath id='border-clip'%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M10 35 Q20 31 30 35 T50 35 T70 35 T90 35 M10 50 Q20 46 30 50 T50 50 T70 50 T90 50 M10 65 Q20 61 30 65 T50 65 T70 65 T90 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none' clip-path='url(%23border-clip)'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg transform='translate(5, 5) scale(0.9)'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1'/%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1'/%3E%3C/linearGradient%3E%3CclipPath id='border-clip'%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M50 2 C68 2 90 14 90 33 C90 66 68 98 50 98 C32 98 10 86 10 67 C10 34 32 2 50 2 Z' fill='url(%23grad)'/%3E%3Cpath d='M10 35 Q20 31 30 35 T50 35 T70 35 T90 35 M10 50 Q20 46 30 50 T50 50 T70 50 T90 50 M10 65 Q20 61 30 65 T50 65 T70 65 T90 65' stroke='white' stroke-width='6' stroke-linecap='round' opacity='0.5' fill='none' clip-path='url(%23border-clip)'/%3E%3C/g%3E%3C/svg%3E">
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
@@ -1348,6 +1348,21 @@
 
             const reader = new FileReader();
             reader.onload = function(event) {
+                // --- RESET UI LOGIC START ---
+                // Hide the Editor Section
+                const editorSection = document.getElementById('editor-section');
+                editorSection.classList.remove('show');
+                document.getElementById('srt-editor').value = ''; // Clear editor content
+
+                // Hide the Results Section
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.classList.remove('show');
+                resultsDiv.innerHTML = '';
+
+                // Hide Action Buttons
+                document.getElementById('action-buttons').style.display = 'none';
+                // --- RESET UI LOGIC END ---
+
                 const fullContent = event.target.result; // Keep raw content with line breaks
                 const lines = fullContent.split(/\r?\n/); // Split by newline
 
@@ -1858,14 +1873,14 @@
                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }, 100);
                 
-                setPageTitle('Partially Translated');
+                setPageTitle('Partially Translated!');
             } else {
                 // Complete translation
                 isPartialTranslation = false;
                 continueBtn.style.display = 'none';
                 updateEditorContent();
                 validateTranslation();
-                setPageTitle('Translated');
+                setPageTitle('Translated!');
             }
         }
 
@@ -2311,6 +2326,8 @@
             // Re-check for remaining language errors
             const remainingLanguageErrors = checkLanguageScript(parsedTranslated);
             let languageHtml = '';
+            
+            // 1. Build the list of remaining errors (if any)
             if (remainingLanguageErrors.length > 0) {
                 languageHtml = `<div class="warning" style="margin-top: 30px; border-top: 1px solid var(--container-border); padding-top: 20px;">⚠️ Foreign Script Detected!</div><div class="mismatch-list">`;
                 for (const err of remainingLanguageErrors) {
@@ -2319,12 +2336,20 @@
                 languageHtml += `</div>`;
             }
 
-            results.innerHTML = `
-                <div class="success">✅ All errors have been fixed!</div>
+            // 2. Determine the status message header
+            let statusHeader = '';
+            if (remainingLanguageErrors.length === 0) {
+                statusHeader = `<div class="success">✅ All errors have been fixed!</div>`;
+            } else {
+                statusHeader = `<div class="warning">⚠️ Timestamp errors fixed, but ${remainingLanguageErrors.length} script errors remain.</div>`;
+            }
+
+            // 3. Render final results
+            results.innerHTML = statusHeader + `
                 <div class="stats">
                     <div class="stat-item"><div class="stat-value">${parsedSource.length}</div><div class="stat-label">Total Subtitles</div></div>
                     <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Timestamp Errors</div></div>
-                    <div class="stat-item"><div class="stat-value">${remainingLanguageErrors.length}</div><div class="stat-label">Script Errors</div></div>
+                    <div class="stat-item"><div class="stat-value" style="color: ${remainingLanguageErrors.length > 0 ? 'var(--warning-color)' : 'inherit'};">${remainingLanguageErrors.length}</div><div class="stat-label">Script Errors</div></div>
                 </div>
             ` + languageHtml;
 
@@ -2336,7 +2361,7 @@
             if (remainingLanguageErrors.length === 0) {
                 setPageTitle('Fixed!');
             } else {
-                setPageTitle('Translated!');
+                setPageTitle('Partially Fixed!');
             }
         });
 
