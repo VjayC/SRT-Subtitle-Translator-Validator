@@ -138,6 +138,8 @@ To add your target language:
 You can also remove any script (except special characters and line breaks) by clicking the × button.
 
 ### 5. Create Your Translation Prompt
+> [!CAUTION]
+> Update your translation prompts to remove any mention of timestamps, as the model no longer sees or generates them.
 
 Write your translation instructions in the prompt field. You can use markdown formatting and switch to **Markdown View** to preview how it renders.
 
@@ -171,7 +173,7 @@ For even more automation, add a `@Config` header to pre-configure settings:
 ```markdown
 @Config
 {{http://localhost:8317/v1/chat/completions}}
-{{gemini-3-pro-preview}}
+{{gemini-2.5-flash}} {{gemini-3-pro-preview}}
 {{Basic Latin}} {{Latin Supplement}} {{Telugu}}
 {{TV show}} {{Psych}} {{2006}} {{, S01E01}} {{, (Title)}}
 
@@ -183,7 +185,7 @@ You are translating subtitles for the {{Enter movie or TV show}} {{Movie/TV Show
 **Configuration Format:**
 - **Line 1:** `@Config` marker
 - **Line 2:** API endpoint URL
-- **Line 3:** Model name
+- **Line 3:** Two model Names for Language Detection and Translation
 - **Line 4:** Allowed script ranges (language scripts or Unicode ranges)
 - **Line 5:** Default values for placeholders in the prompt body (must match the order and number of unique placeholders)
 - **Line 6:** Empty line (required separator)
@@ -199,18 +201,11 @@ When a configured template is imported:
 
 **Example Non-Template Prompt:**
 ```markdown
-You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in timestamps and script usage. Failure to adhere to these rules is not an option.
+You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in CONTENT MAPPING and SCRIPT & LANGUAGE RULES mentioned below. Failure to adhere to these rules is not an option.
 
 **Goal:** Translate the attached English .srt file for the TV show Psych (2006), S02E02, (65 Million Years Off) into casual Telugu for a native Telugu speaker who is not fluent in English.
 
 ### Core Directives (Must be followed without exception):
-
-**ABSOLUTE TIMESTAMP INTEGRITY:** This is the most critical rule. The timestamps in the output file MUST BE an exact, character-for-character, byte-for-byte copy of the timestamps in the source file. Treat the entire timestamp line (HH:MM:SS,ms --> HH:MM:SS,ms) as a single, unchangeable piece of data—a unique ID that must be copied exactly as it appears. Do not parse, interpret, round, or alter it in any way. A single missing or incorrect character is a total failure.
-
-✅ **CORRECT:** 00:14:56,928 (From Input SRT)  
-❌ **INCORRECT:** 00:14:6,928 (Single Digit Missing)  
-❌ **INCORRECT:** 00:14:46,928 (Single Digit Mismatch)  
-❌ **INCORRECT:** 00:14:33,928 (Double Digit Mismatch)
 
 **PERFECT LINE BREAKS:** Preserve the original line breaks within each subtitle entry. If the original English subtitle has two lines, the translated Tenglish subtitle must also have two lines. Do not merge lines.
 
@@ -220,6 +215,10 @@ You are a hyper-vigilant subtitle translator and formatter. Your task is to tran
 - **NO "MERGING UP":** If ID `X` ends with `...` or an incomplete thought, leave it incomplete. **DO NOT** pull text from ID `X+1` to finish the sentence.
 - **NO COMPRESSION:** If the source has 3 blocks, the output must have 3 blocks. Merging `X` and `X+1` causes `X+2` to shift incorrectly, destroying synchronization.
 - **PRESERVE FRAGMENT ORDER (ANTI-SOV):** If "Action" is in ID `A` and "Reason" is in ID `B`, keep them separate. Do not move the "Reason" up to ID `A` to satisfy Telugu grammar.
+- **TOLERATE FRAGMENTED GRAMMAR":** Telugu grammar usually places the verb at the end (SOV). However, subtitle timing (SVO) takes precedence.
+    - If English Block `X` says "I went to...", the Telugu Block `X` **MUST** end with a connector or incomplete phrase (e.g., "నేను వెళ్ళాను...").
+    - **DO NOT** move the destination from Block `X+1` into Block `X` just to close the sentence.
+    - It is better to have "Broken Telugu" than "Broken Sync."
 
 **SCRIPT & LANGUAGE RULES (CRITICAL):**
 - **Definition of "Tenglish":** This is a Mixed-Script translation.
@@ -238,14 +237,17 @@ This table shows the exact type of script errors to avoid and their correct repl
 | a killer's window | ఒక હત్యకుడి window (Uses Gujarati હ) | ఒక హత్యకుడి window (Uses correct Telugu హ) |
 | if you don't mind | మీరు気に పట్టించుకోకపోతే (Uses Japanese 気) | మీరు పట్టించుకోకపోతే (Uses correct Telugu script only) |
 | I am not a suspect | నేను suspect नी కాదు (Uses Devanagari नी) | నేను suspect ని కాదు (Uses correct Telugu ని) |
-| I am ready. | Nenu ready ga unnanu. (Romanized - BANNED) | నేను ready గా ఉన్నాను. |
+| I am ready. | Nenu ready ga unnanu. (Romanized - BANNED) | నేను ready గా ఉన్నాను. (Doesn't transliterate) |
+| 284<br>Sheriff Jackson mentioned we had | 284<br>ఈ రోజు town లో ఇద్దరు visitors<br>ఉన్నారని Sheriff Jackson చెప్పారు.<br>(Error: Merged 284 & 285 into index 284 to fix grammar) | Sheriff Jackson mention చేసారు మనకి<br>(Keeps sentence incomplete to match Source) |
+| 285<br>a couple of visitors<br>in town today. | 285<br>Cinnamon festival cancel<br>అయిందని మీకు తెలుసు కదా.<br>(Error: Content pulled from next line...) | 285<br>కొంతమంది visitors<br>ఈ రోజు town లో ఉన్నారని.<br>(Keeps "hanging" fragment separate) |
+| 286<br>You are aware the cinnamon<br>festival has been cancelled. | 286<br>Oh, అవును.<br>(Error: Merging subtitles causes cascading mismatch) | 286<br>Cinnamon festival cancel<br>అయిందని మీకు తెలుసు కదా.<br>(Restores correct content to ID 286) |
 
 ### Final Verification Protocol:
 
 Before providing the final output, perform a self-correction check. Review your entire translated file one last time to confirm:
 
-1. **Timestamp Check:** Is every single digit of every timestamp identical to the source?
-2. **Line Break Check:** Does the line count of every subtitle entry match the source exactly?
+1. **Line Break Check:** Does the line count of every subtitle entry match the source exactly?
+2. **Merge Check:** Confirm that no distinct lines or separate subtitle blocks have been merged; strict 1:1 mapping must be maintained.
 3. **Script Check:** Have you scanned the entire text to ensure there are zero characters from any script other than English and Telugu? Verify common error characters like హ vs. હ.
 
 Please begin the translation of the attached file, adhering strictly to these enhanced directives.

@@ -666,27 +666,37 @@
         <p class="subtitle">Translate, validate, and automatically fix subtitle files</p>
 
         <div class="config-section">
-            <label class="config-label">CLI Proxy API Endpoint</label>
-            <input type="text" id="api-endpoint" class="config-input" value="http://localhost:8317/v1/chat/completions" placeholder="http://localhost:8317/v1/chat/completions">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <label class="config-label">CLI Proxy API Endpoint</label>
+                    <input type="text" id="api-endpoint" class="config-input" value="http://localhost:8317/v1/chat/completions" placeholder="http://localhost:8317/v1/chat/completions">
+                </div>
+                <div>
+                    <label class="config-label">API Key</label>
+                    <input type="text" id="api-key" class="config-input" value="" placeholder="Enter your API key from config.yaml...">
+                </div>
+            </div>
             
-            <label class="config-label" style="margin-top: 15px;">Model Name</label>
-            <input type="text" id="model-name" class="config-input" value="gemini-2.5-pro" placeholder="gemini-2.5-pro">
-            
-            <label class="config-label" style="margin-top: 15px;">API Key</label>
-            <input type="text" id="api-key" class="config-input" value="" placeholder="Enter your API key from config.yaml...">
+            <label class="config-label" style="margin-top: 15px;">Model Names (Language Detection and Translation)</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <input type="text" id="lite-model-name" class="config-input" value="gemini-2.5-flash" placeholder="Language Detection (e.g., gemini-2.5-flash)">
+                <input type="text" id="model-name" class="config-input" value="gemini-2.5-pro" placeholder="Translation (e.g., gemini-2.5-pro)">
+            </div>
         </div>
 
         <div class="config-section">
             <label class="config-label">Allowed Script Ranges</label>
-            <div class="script-search-container">
-                <input type="text" id="script-search" class="config-input" placeholder="Search for a language script (e.g., Telugu, Arabic, Chinese)...">
-                <div id="script-suggestions" class="script-suggestions"></div>
-            </div>
-            <div class="custom-range-container">
-                <input type="text" id="custom-range-input" class="config-input" placeholder="Add custom: U+0C00-U+0C7F or U+0C00 or 0C00-0C7F">
-                <button id="add-custom-range" class="action-button secondary" style="padding: 10px 16px; font-size: 14px; width: auto; flex-shrink: 0;">
-                    ➕ Add
-                </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="script-search-container" style="display: flex; margin-bottom: 0;">
+                    <input type="text" id="script-search" class="config-input" placeholder="Search for a language script (e.g., Telugu, Arabic, Chinese)...">
+                    <div id="script-suggestions" class="script-suggestions"></div>
+                </div>
+                <div class="custom-range-container" style="margin-bottom: 0;">
+                    <input type="text" id="custom-range-input" class="config-input" placeholder="Add custom: U+0C00-U+0C7F or U+0C00 or 0C00-0C7F">
+                    <button id="add-custom-range" class="action-button secondary" style="padding: 10px 16px; font-size: 14px; width: auto; flex-shrink: 0;">
+                        ➕ Add
+                    </button>
+                </div>
             </div>
             <div id="active-scripts" class="active-scripts">
                 <div class="script-tag" data-name="Basic Latin" data-start="0x0020" data-end="0x007E">
@@ -782,6 +792,7 @@
         let sourceFileName = ''; // Stores the original filename
         let isMarkdownView = false; // Tracks markdown view state
         let translationLanguage = ''; // Stores the detected language name
+        let translationCode = ''; // Will store ISO-639-2/B language code
         let isPartialTranslation = false; // Tracks if translation is incomplete
         const originalTitle = document.title; // Store original title
         let rawTemplateText = ''; // Stores the raw template text
@@ -1066,6 +1077,29 @@
                     subtitles.push({
                         index: index,
                         timecode: timecodeLine.trim(),
+                        text: textLines.join('\n')
+                    });
+                }
+            }
+            return subtitles;
+        }
+
+        // Helper to parse the simplified "Index + Text" format from Gemini
+        function parseSimplifiedSRT(content) {
+            const subtitles = [];
+            const blocks = content.trim().split(/\n\s*\n/);
+            
+            for (const block of blocks) {
+                const lines = block.trim().split('\n');
+                if (lines.length < 1) continue;
+
+                // First line is Index, rest is Text
+                const index = parseInt(lines[0]);
+                const textLines = lines.slice(1);
+
+                if (!isNaN(index)) {
+                    subtitles.push({
+                        index: index,
                         text: textLines.join('\n')
                     });
                 }
@@ -1386,10 +1420,10 @@
                         return;
                     }
 
-                    // Line 2: Model (Exactly one pair)
+                    // Line 2: Models (Strictly two pairs: {{Lite}} {{Main}})
                     const line2Tags = extractTags(lines[2]);
-                    if (line2Tags.length !== 1 || !line2Tags[0].trim()) {
-                        alert('Invalid Template Config (Line 3): Must contain exactly one non-empty {{Model Name}}.');
+                    if (line2Tags.length !== 2 || !line2Tags[0].trim() || !line2Tags[1].trim()) {
+                        alert('Invalid Template Config (Line 3): Must contain strictly two {{Model Name}} tags.\nFormat: {{LiteModel}} {{MainModel}}');
                         return;
                     }
 
@@ -1451,9 +1485,9 @@
                     const newEndpoint = line1Tags[0].trim();
                     document.getElementById('api-endpoint').value = newEndpoint;
 
-                    // 2. Set Model Name
-                    const newModel = line2Tags[0].trim();
-                    document.getElementById('model-name').value = newModel;
+                    // 2. Set Model Names
+                    document.getElementById('lite-model-name').value = line2Tags[0].trim();
+                    document.getElementById('model-name').value = line2Tags[1].trim();
 
                     // 3. Set Active Scripts
                     activeScripts = []; // Clear existing
@@ -1465,7 +1499,6 @@
                     parseAndDisplayTemplateInputs(rawTemplateText, line4Values);
 
                 } else {
-                    // No @Config detected, proceed as before
                     rawTemplateText = fullContent;
                     parseAndDisplayTemplateInputs(rawTemplateText, []);
                 }
@@ -1896,7 +1929,7 @@
             const continueBtn = document.getElementById('continue-btn');
             const translateBtn = document.getElementById('translate-btn');
             
-            results.innerHTML = '<div class="loading"></div> Continuing translation...';
+            results.innerHTML = '<div class="loading"></div> Continuing translation';
             continueBtn.disabled = true;
             translateBtn.disabled = true; // Disable translate button during continuation
 
@@ -1904,7 +1937,7 @@
 
             try {
                 const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
-                const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
+                const modelName = document.getElementById('model-name').value.trim() || 'gemini-2.5-pro';
                 const apiKey = document.getElementById('api-key').value || 'dummy';
                 const nextIndex = parsedTranslated[parsedTranslated.length - 1].index + 1;
 
@@ -1919,16 +1952,14 @@
                         messages: [
                             {
                                 role: 'user',
-                                content: `Begin from index ${nextIndex}\n` + promptText + '\n\n' + sourceFile
+                                content: `Begin from index ${nextIndex}\n` + promptText + '\n\nIMPORTANT: Output ONLY the Index and the Translated Text. Do NOT output timestamps.\nFormat example:\n1\nTranslated Text Here\n\n2\nNext Line Here\n\n' + parsedSource.map(sub => `${sub.index}\n${sub.text}`).join('\n\n')
                             }
                         ],
                         stream: false
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
 
                 const data = await response.json();
                 let continuedSRT = data.choices[0].message.content;
@@ -1937,15 +1968,27 @@
                 logRawOutput(continuedSRT);
 
                 const codeBlockMatch = continuedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
-                if (codeBlockMatch) {
-                    continuedSRT = codeBlockMatch[1];
-                }
+                if (codeBlockMatch) continuedSRT = codeBlockMatch[1];
 
-                const continuedParsed = parseSRT(continuedSRT);
+                // Parse Simplified & Merge
+                const parsedSimplified = parseSimplifiedSRT(continuedSRT);
+                const continuedWithTimestamps = [];
+
+                for (const simpleSub of parsedSimplified) {
+                    if (simpleSub.index < nextIndex) continue;
+                    const sourceSub = parsedSource.find(s => s.index === simpleSub.index);
+                    if (sourceSub) {
+                        continuedWithTimestamps.push({
+                            index: simpleSub.index,
+                            timecode: sourceSub.timecode,
+                            text: simpleSub.text
+                        });
+                    }
+                }
                 
                 // Append to existing translation
-                parsedTranslated = parsedTranslated.concat(continuedParsed);
-                
+                parsedTranslated = parsedTranslated.concat(continuedWithTimestamps);
+
                 // Update translatedSRT
                 translatedSRT = parsedTranslated.map(sub => 
                     `${sub.index}\n${sub.timecode}\n${sub.text}`
@@ -1975,7 +2018,12 @@
             
             actionButtons.style.display = 'none';
             editorSection.classList.remove('show');
-            results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
+
+            const liteModelName = document.getElementById('lite-model-name').value.trim() || 'gemini-2.5-flash';
+            const modelName = document.getElementById('model-name').value.trim() || 'gemini-2.5-pro';
+            const firstWord = modelName.split('-')[0];
+            const formattedModelName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
+            results.innerHTML = `<div class="loading"></div> Translating with ${formattedModelName}`;
             results.classList.add('show');
 
             setTimeout(() => {
@@ -1984,17 +2032,14 @@
             
             // Disable translate button
             translateBtn.disabled = true;
-
             setPageTitle('Translating...');
 
             try {
                 const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
-                const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
                 const apiKey = document.getElementById('api-key').value || 'dummy';
 
                 // First, detect the translation language
-                results.innerHTML = '<div class="loading"></div> Detecting translation language...';
-                
+                results.innerHTML = `<div class="loading"></div> Detecting translation language with ${formattedModelName}`;
                 const languageResponse = await fetch(apiEndpoint, {
                     method: 'POST',
                     headers: {
@@ -2002,29 +2047,38 @@
                         'Authorization': `Bearer ${apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'gemini-2.5-flash',
+                        model: liteModelName,
                         messages: [
                             {
                                 role: 'user',
-                                content: `Given this prompt [${promptText}], only output the name of the translation target language or the target code-mixed/code-switched vernacular (e.g., Tenglish, Hinglish).`
+                                content: `Given this prompt [${promptText}], identify the translation target language or the target code-mixed/code-switched vernacular (e.g., Tenglish, Hinglish). Only output the result in the format "Language Name|Code". If an exact ISO-639-2/B code does not exist for the vernacular, use the code for the dominant or most similar root language (e.g., for Spanglish use the code for Spanish), otherwise only output the Language Name.`
                             }
-                        ],
-                        stream: false
+                        ]
                     })
                 });
 
                 if (languageResponse.ok) {
                     const languageData = await languageResponse.json();
-                    translationLanguage = languageData.choices[0].message.content.trim();
                     // Remove any quotes or extra formatting
-                    translationLanguage = translationLanguage.replace(/['"]/g, '');
+                    const rawLangContent = languageData.choices[0].message.content.trim().replace(/['"]/g, '');
+
+                    if (rawLangContent.includes('|')) {
+                        // Format detected: "Spanish|es"
+                        const parts = rawLangContent.split('|');
+                        translationLanguage = parts[0].trim(); // "Spanish"
+                        translationCode = parts[1].trim();     // "es"
+                    } else {
+                        // No code detected: just "Spanish"
+                        translationLanguage = rawLangContent;
+                        translationCode = '';
+                    }
                 } else {
                     translationLanguage = 'Translated'; // Fallback
+                    translationCode = '';
                 }
 
                 // Now perform the actual translation
-                results.innerHTML = '<div class="loading"></div> Translating with Gemini...';
-
+                results.innerHTML = `<div class="loading"></div> Translating with ${formattedModelName}`;
                 const response = await fetch(apiEndpoint, {
                     method: 'POST',
                     headers: {
@@ -2036,31 +2090,45 @@
                         messages: [
                             {
                                 role: 'user',
-                                content: promptText + '\n\n' + sourceFile
+                                content: promptText + '\n\nIMPORTANT: Output ONLY the Index and the Translated Text. Do NOT output timestamps.\nFormat example:\n1\nTranslated Text Here\n\n2\nNext Line Here\n\n' + parsedSource.map(sub => `${sub.index}\n${sub.text}`).join('\n\n')
                             }
                         ],
                         stream: false
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
 
                 const data = await response.json();
-                translatedSRT = data.choices[0].message.content;
+                let rawResponse = data.choices[0].message.content;
 
                 // Log raw output
-                logRawOutput(translatedSRT);
+                logRawOutput(rawResponse);
 
-                const codeBlockMatch = translatedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
-                if (codeBlockMatch) {
-                    translatedSRT = codeBlockMatch[1];
+                const codeBlockMatch = rawResponse.match(/```(?:srt)?\n([\s\S]*?)\n```/);
+                if (codeBlockMatch) rawResponse = codeBlockMatch[1];
+
+                // Parse Simplified Response & Merge with Source Timestamps
+                const parsedSimplified = parseSimplifiedSRT(rawResponse);
+                parsedTranslated = [];
+
+                for (const simpleSub of parsedSimplified) {
+                    // Find matching timestamp from source
+                    const sourceSub = parsedSource.find(s => s.index === simpleSub.index);
+                    if (sourceSub) {
+                        parsedTranslated.push({
+                            index: simpleSub.index,
+                            timecode: sourceSub.timecode, // Re-insert timestamp from source
+                            text: simpleSub.text
+                        });
+                    }
                 }
 
-                parsedTranslated = parseSRT(translatedSRT);
+                // Reconstruct full SRT string for Editor/Download
+                translatedSRT = parsedTranslated.map(sub => 
+                    `${sub.index}\n${sub.timecode}\n${sub.text}`
+                ).join('\n\n');
                 
-                // Check for partial translation
                 checkAndHandlePartialTranslation();
             } catch (error) {
                 results.innerHTML = `<div class="error">❌ Translation Error: ${error.message}</div>`;
@@ -2239,34 +2307,34 @@
             }
             
             // Fix language errors using Gemini
+            const modelName = document.getElementById('model-name').value.trim() || 'gemini-2.5-pro';
+            const firstWord = modelName.split('-')[0];
+            const formattedModelName = firstWord.charAt(0).toUpperCase() + firstWord.slice(1);
             if (hasLanguageErrors) {
-                results.innerHTML = '<div class="loading"></div> Fixing foreign script errors with Gemini...';
+                results.innerHTML = `<div class="loading"></div> Fixing foreign script errors with ${formattedModelName}`;
                 
                 try {
                     // Get unique subtitle indices with errors
                     const errorIndices = [...new Set(languageErrors.map(err => err.index))];
                     
-                    // Create subset of source subtitles
+                    // Create subset of source (Index + Text only)
                     const subsetParsedSource = parsedSource
                         .filter(sub => errorIndices.includes(sub.index))
-                        .map(sub => `${sub.index}\n${sub.timecode}\n${sub.text}`)
+                        .map(sub => `${sub.index}\n${sub.text}`)
                         .join('\n\n');
                     
-                    // Create subset of translated subtitles with error info
+                    // Create subset of translated (Index + Text + Error Note, NO Timestamps)
                     const subsetParsedTranslated = parsedTranslated
                         .filter(sub => errorIndices.includes(sub.index))
                         .map(sub => {
                             const error = languageErrors.find(err => err.index === sub.index);
-                            if (error) {
-                                return `${sub.index}: Found invalid character '${error.invalidChar}' (${error.unicode})\n${sub.timecode}\n${sub.text}`;
-                            }
-                            return `${sub.index}\n${sub.timecode}\n${sub.text}`;
+                            const errorMsg = error ? ` [Error: Invalid char '${error.invalidChar}']` : '';
+                            return `${sub.index}${errorMsg}\n${sub.text}`;
                         })
                         .join('\n\n');
                     
                     // Call Gemini to fix the errors
                     const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
-                    const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
                     const apiKey = document.getElementById('api-key').value || 'dummy';
 
                     const response = await fetch(apiEndpoint, {
@@ -2286,31 +2354,28 @@
                             stream: false
                         })
                     });
-                    
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                    }
-                    
+
+                    if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
+
                     const data = await response.json();
                     let fixedSRT = data.choices[0].message.content;
-                    
+
                     // Log raw output
                     logRawOutput(fixedSRT);
-                    
+
                     // Extract from code block if needed
                     const codeBlockMatch = fixedSRT.match(/```(?:srt)?\n([\s\S]*?)\n```/);
-                    if (codeBlockMatch) {
-                        fixedSRT = codeBlockMatch[1];
-                    }
-                    
+                    if (codeBlockMatch) fixedSRT = codeBlockMatch[1];
+
                     // Parse the fixed subtitles
-                    const fixedParsed = parseSRT(fixedSRT);
-                    
-                    // Replace the fixed subtitles in parsedTranslated
+                    const fixedParsed = parseSimplifiedSRT(fixedSRT);
+
+                    // Replace the fixed subtitles in parsedTranslated (Preserve timestamps from existing translation)
                     for (const fixedSub of fixedParsed) {
                         const index = parsedTranslated.findIndex(sub => sub.index === fixedSub.index);
                         if (index !== -1) {
-                            parsedTranslated[index] = fixedSub;
+                            // Only update text, keep existing timecode and index
+                            parsedTranslated[index].text = fixedSub.text;
                         }
                     }
                     
@@ -2378,21 +2443,31 @@
                 return;
             }
 
-            // Get model name and format it
-            const modelName = document.getElementById('model-name').value.trim() || document.getElementById('model-name').placeholder;
+            // 1. Format the model name
+            const modelName = document.getElementById('model-name').value.trim() || 'gemini-2.5-pro';
             const formattedModelName = modelName
                 .split('-')
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
 
-            // Create filename with language and model name
+            // 2. Determine the base filename
+            // Use "translated_subtitles" if no source file was uploaded
+            const baseName = (sourceFileName && sourceFileName.trim() !== '') 
+                ? sourceFileName 
+                : 'translated_subtitles';
+
             let filename;
-            if (sourceFileName && sourceFileName.trim() !== '') {
-                filename = `${sourceFileName}(${translationLanguage})(${formattedModelName}).srt`;
+
+            // 3. Apply the requested logic
+            if (translationCode && translationCode.trim() !== '') {
+                // If code EXISTS: Name(Lang)(Model).code.srt
+                filename = `${baseName}(${translationLanguage})(${formattedModelName}).${translationCode}.srt`;
             } else {
-                filename = `translated_subtitles(${translationLanguage})(${formattedModelName}).srt`;
+                // If code MISSING: Name(Lang)(Model).srt
+                filename = `${baseName}(${translationLanguage})(${formattedModelName}).srt`;
             }
 
+            // 4. Trigger Download
             const blob = new Blob([translatedSRT], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
