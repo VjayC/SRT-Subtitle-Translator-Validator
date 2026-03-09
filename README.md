@@ -6,10 +6,11 @@
 
 <p align="center">
 <a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-28a745" style="max-width: 100%;"></a>
-<a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator"><img alt="Star this repo" src="https://img.shields.io/github/stars/VjayC/SRT-Subtitle-Translator-Validator.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a></p>
+<a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/VjayC/SRT-Subtitle-Translator-Validator?label=Release" style="max-width: 100%;"></a>
+<a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator"><img alt="Star this repo" src="https://img.shields.io/github/stars/VjayC/SRT-Subtitle-Translator-Validator.svg?style=social&amp;label=Star%20this%20repo&amp;maxAge=60" style="max-width: 100%;"></a>
 </p>
 
-A comprehensive browser-based tool that leverages Large Language Models (LLMs) to translate SRT subtitle files and automatically validate the output for common errors. Built specifically to create high-quality, script-accurate subtitles using your existing Gemini subscription via [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI).
+A comprehensive browser-based and desktop tool that leverages Large Language Models (LLMs) to translate SRT subtitle files and automatically validate the output for common errors. Built specifically to create high-quality, script-accurate subtitles using your existing LLM subscriptions (Gemini, Claude, OpenAI, etc.) via [CLI Proxy API](https://github.com/router-for-me/CLIProxyAPI).
 
 Original TV Show in English            |  Output of translated SRT in Tenglish
 :-------------------------:|:-------------------------:
@@ -20,7 +21,7 @@ Original TV Show in English            |  Output of translated SRT in Tenglish
 
 ## Motivation
 
-My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. While Large Language Models (LLMs) are incredibly powerful and can translate subtitles in seconds, they often introduce subtle errors, such as:
+My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. While Large Language Models (LLMs) are incredibly powerful and can translate subtitles in minutes, they often introduce subtle errors, such as:
 
 * **Timestamp Drift:** The model may slightly alter timestamps, causing subtitles to appear too early or too late.
 * **Character "Hallucinations":** When translating for a specific language (like Telugu), the model might mistakenly insert characters from a similar-looking but incorrect script (like Devanagari, Tamil, or Kannada).
@@ -35,12 +36,17 @@ This is the successor to my original SRT Subtitle Validator, which could only va
 
 ## Features
 
-### Translation
-- **Direct LLM Integration:** Translate subtitles using your Gemini subscription (via CLI Proxy API)
-- **Customizable Prompts:** Full markdown editor with live preview for translation instructions
-- **Partial Translation Recovery:** Automatically detects incomplete translations and continues from where it stopped
-- **Language Detection:** Automatically identifies the target language for proper filename generation
-- **Raw Output Logging:** Saves all Gemini responses with timestamps for debugging
+### Translation Modes
+- **Translate:** Ideal for translating an entire file at once. Recommended for SRT files with around 800 to 900 indexes.
+- **Batch Translate:** Translates the file in manageable batches, preventing context-length cutoffs. Recommended for files with over 900 indexes.
+- **Standalone Validate:** Dedicated mode to validate and fix an already translated SRT file without re-translating.
+
+### Translation Capabilities
+- **Direct LLM Integration:** Translate subtitles using any supported LLM via CLI Proxy API.
+- **Customizable Prompts:** Full markdown editor with live preview for translation instructions.
+- **Partial Translation Recovery:** Automatically detects incomplete translations and continues from where it stopped.
+- **Language Detection:** Automatically identifies the target language for proper filename generation.
+- **Raw Output Logging:** Saves all LLM responses with timestamps for debugging.
 
 ### Validation
 - **Timestamp Synchronization:** Compares timestamps between source and translated files, reporting any mismatches with detailed ranges
@@ -63,7 +69,32 @@ This is the successor to my original SRT Subtitle Validator, which could only va
 - **Configured Prompt Templates:** Loads your saved configuration and prompt to minimize manual entry
 - **File Drag & Drop:** Supports an alternative way to upload files
 
+## Desktop Application Specifics
+
+You can download the latest native installer for your operating system (Mac, Windows, or Linux) from the **[GitHub Releases page](https://github.com/VjayC/SRT-Subtitle-Translator-Validator/releases)**.
+
+If you are using the downloadable native desktop application, it comes with several built-in enhancements:
+
+- **Automated Proxy Management:** The application will automatically launch and stop the CLI Proxy API for you! You must navigate to **Global Settings** and save the appropriate launch command for your Operating System (Windows, macOS, or Linux).
+- **Manual Updates Required:** While the desktop app can auto-update itself via the Settings page, **you must keep the underlying CLI Proxy API up to date manually**, just as you did for the web version. The dashboard provides a convenient status indicator and links to the latest GitHub and Homebrew releases.
+- **Strict Template Enforcement:** The desktop application's Template Manager **only accepts `@Config` configured templates**. Raw text templates are not supported in the desktop app to ensure a strict and automated workflow.
+- **Embedded Database:** Your settings and validated templates are saved locally via an embedded H2 database and persist between sessions.
+
 ## Prerequisites
+
+### Desktop Application Requirements
+If you are downloading the native `.dmg`, `.exe`, or `.AppImage` files, please ensure your system meets the following requirements:
+
+* **Java Runtime Environment (JRE):** The desktop application bundles a local Spring Boot server for its validation engine. You **must** have Java 17 or higher installed and available in your system's PATH. You can download it from [Adoptium (Eclipse Temurin)](https://adoptium.net/).
+* **Windows:** Requires the Microsoft Edge WebView2 Runtime (this is already pre-installed on Windows 11 and fully updated Windows 10 machines).
+* **macOS:** Because this application is not signed with a paid Apple Developer certificate, macOS Gatekeeper will block it initially. To safely bypass this for your first launch:
+  1. Try to open the app normally from your Applications folder (it will show a blocked warning).
+  2. Open your Mac's **System Settings** (Apple menu  > System Settings).
+  3. Click **Privacy & Security** in the left sidebar and scroll down to the **Security** section.
+  4. You will see a message saying the app was blocked. Click the **Open Anyway** button. *(Note: This button is only available for about an hour after you try to open the app).*
+  5. Enter your Mac login password and click **Open**.
+  *(You only have to do this once! It will open normally every time after).*
+* **Linux:** Requires WebKit2GTK to render the application window. If it doesn't launch, you may need to install it via your package manager (e.g., `sudo apt install libwebkit2gtk-4.1-0`).
 
 ### CLI Proxy API Installation
 
@@ -71,19 +102,18 @@ CLI Proxy API is required to access your Gemini subscription through an API inte
 
 For installation instructions, please visit: https://help.router-for.me/introduction/quick-start.html
 
-### Gemini Authentication
+### LLM Authentication
 
-**Important:** During login, you may need to choose or create a Google Cloud project. **Select a project with no billing account linked** to avoid unexpected charges. You can manage your projects at [console.cloud.google.com](https://console.cloud.google.com).
+Depending on which model you want to use (Gemini, Claude, OpenAI, etc.), you will need to authenticate the CLI Proxy API. 
 
+For step-by-step instructions on authenticating different models, please go to the [CLI Proxy API Provider Configuration](https://help.router-for.me/configuration/provider/gemini-cli.html) and click on the respective model name in the sidebar to view the correct commands.
+
+**Example for Gemini:**
 1. Run the login command:
-```bash
-cliproxyapi --login
-```
+`cliproxyapi --login`
 
 If you're an existing Gemini Code user:
-```bash
-cliproxyapi --login --project_id <your_project_id>
-```
+`cliproxyapi --login --project_id <your_project_id>`
 
 2. Follow the OAuth flow in your browser to authenticate
 3. The local OAuth callback uses port `8085`
@@ -173,7 +203,7 @@ For even more automation, add a `@Config` header to pre-configure settings:
 ```markdown
 @Config
 {{http://localhost:8317/v1/chat/completions}}
-{{gemini-2.5-flash}} {{gemini-3-pro-preview}}
+{{gemini-3-flash-preview}} {{gemini-3.1-pro-preview}}
 {{Basic Latin}} {{Latin Supplement}} {{Telugu}}
 {{TV show}} {{Psych}} {{2006}} {{, S01E01}} {{, (Title)}}
 
@@ -346,14 +376,14 @@ You can also add any custom Unicode range or character.
 
 ### Using Different Models
 
-Edit the Model Name field to use other models:
-- `gemini-2.5-flash`: Faster, cheaper, good for simple translations
+Edit the Model Name field to use other models. Since CLI Proxy API supports OpenAI, Claude, and Gemini, you can input models like `gpt-5.2`, `claude-sonnet-4-6`, or `gemini-3.1-pro-preview`. Depending on the model selected, translation quality may vary:
+- `gemini-3-flash-preview`: Faster, cheaper, good for simple translations
 - `gemini-2.5-pro`: More accurate, better for complex translations
-- `gemini-3-pro-preview`: Latest model, best quality and reasoning
-- See [CLI Proxy API documentation](https://help.router-for.me/introduction/what-is-cliproxyapi.html#supported-models) for all supported models
+- `gemini-3.1-pro-preview`: Latest model, best quality and reasoning
+- See the [CLI Proxy API documentation](https://help.router-for.me/introduction/what-is-cliproxyapi.html#supported-models) or the [model definitions source](https://github.com/router-for-me/CLIProxyAPI/blob/main/internal/registry/model_definitions_static_data.go) for all supported models (the source may be more up to date).
 
 > [!WARNING]
-> The application has only been tested with `gemini-3-pro-preview`/`gemini-2.5-pro` and only uses `gemini-2.5-flash` to detect the target translation language for the purpose of naming the output SRT file.
+> The application has only been tested with `gemini-3.1-pro-preview`/`gemini-2.5-pro` and only uses `gemini-3-flash-preview` to detect the target translation language for the purpose of naming the output SRT file.
 
 ### Custom Unicode Ranges
 
@@ -367,12 +397,10 @@ Add specific character ranges for edge cases:
 
 Contributions are welcome! Some areas for improvement:
 - Support for streaming responses (real-time translation preview)
-- Batch file processing
-- Export validation reports as JSON/CSV
-- Integration with other LLM providers
+- ...
 
 > [!NOTE]
-> The Gemini LLM was chosen due to a comparatively higher output token limit for its web client.
+> The Gemini LLM was chosen as the default due to best performance on the MMMLU (Multilingual Q&A) and MRCR v2 (8-needle | Long context performance) benchmarks.
 
 ## Credits
 

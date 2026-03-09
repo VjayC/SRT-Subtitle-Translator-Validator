@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #f9fafb; /* gray-50 */
+    color: #111827;            /* gray-900 */
+    transition: color 200ms, background-color 200ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background-color: #000000; /* black */
+      color: #ffffff;            /* white */
+    }
+  }
+}

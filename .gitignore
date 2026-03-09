@@ -1,1 +1,58 @@
+# =========================
+# OS Generated Files
+# =========================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# =========================
+# Security & Credentials
+# =========================
+# CRITICAL: Never commit your Tauri private updater key!
+*.key
+updater.key
+*.pem
+.env
+.env.*.local
+
+# =========================
+# Frontend (Node, Vite, React)
+# =========================
+node_modules/
+dist/
+dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Desktop App (Tauri & Rust)
+# =========================
+# This prevents the 7GB+ Rust build cache & installers from uploading
+src-tauri/target/
+
+# =========================
+# Backend (Java, Maven, Spring Boot)
+# =========================
+# Ignore the backend build outputs
+app/backend/target/
+*.log
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+*.iml
+*.swp
+
+# Eclipse specific
+.metadata/
+bin/
+.project
+.classpath
+.settings/
