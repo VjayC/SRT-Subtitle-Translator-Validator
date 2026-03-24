@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { ask } from '@tauri-apps/plugin-dialog';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { SettingsProvider } from './context/SettingsContext';
 import { TemplateProvider } from './context/TemplateContext';
 import { Layout } from './components/Layout';
@@ -86,7 +86,7 @@ function App() {
   return (
     <SettingsProvider>
       <TemplateProvider>
-        <BrowserRouter>
+        <HashRouter>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
@@ -94,7 +94,7 @@ function App() {
               <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
-        </BrowserRouter>
+        </HashRouter>
       </TemplateProvider>
 
       {/* --- NEW: The Global Updating Overlay --- */}

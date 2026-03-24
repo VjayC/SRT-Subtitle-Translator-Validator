@@ -84,7 +84,7 @@ jobs:
           projectPath: ./app/frontend
           tagName: ${{ github.ref_name }} # e.g., v1.3.0
           releaseName: 'SRT Translator & Validator ${{ github.ref_name }}'
-          releaseBody: 'See the assets below to download the latest version for your operating system.'
+          releaseBody: 'A new update is available! Please see the GitHub release page for the full changelog and details.'
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

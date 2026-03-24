@@ -727,7 +727,7 @@
     <div class="container">
         <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;">
             <h1 style="margin-bottom: 0;">SRT Translator & Validator</h1>
-            <a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator/tree/main?tab=readme-ov-file#prerequisites" 
+            <a href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator#prerequisites" 
                target="_blank" 
                rel="noopener noreferrer"
                title="View Documentation on GitHub"
@@ -744,7 +744,7 @@
         <div class="config-section">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
-                    <label class="config-label">CLI Proxy API Endpoint</label>
+                    <label class="config-label">CLIProxyAPI Endpoint</label>
                     <input type="text" id="api-endpoint" class="config-input" value="http://localhost:8317/v1/chat/completions" placeholder="http://localhost:8317/v1/chat/completions">
                 </div>
                 <div>
@@ -920,15 +920,16 @@
         let activeSourceSubset = [];
         let parsedTranslated = null;
         let timestampMismatches = [];
-        let rawOutputLog = ''; 
-        let sourceFileName = ''; 
-        let isMarkdownView = false; 
-        let translationLanguage = ''; 
-        let translationCode = ''; 
-        let isPartialTranslation = false; 
-        const originalTitle = document.title; 
-        let rawTemplateText = ''; 
-        let titleAnimationInterval = null; 
+        let rawOutputLog = '';
+        let sourceFileName = '';
+        let isMarkdownView = false;
+        let translationLanguage = '';
+        let translationCode = '';
+        let lastDetectedPrompt = '';
+        let isPartialTranslation = false;
+        const originalTitle = document.title;
+        let rawTemplateText = '';
+        let titleAnimationInterval = null;
 
         let currentMode = 'translate';
         let isProcessing = false;
@@ -1153,9 +1154,8 @@
             }
 
             const upperValue = value.toUpperCase();
-            const MAX_UNICODE = 0x10FFFF; // The absolute maximum valid Unicode code point
+            const MAX_UNICODE = 0x10FFFF;
 
-            // Check for range patterns: U+XXXX-U+YYYY or XXXX-YYYY
             let match = upperValue.match(/^U\+([0-9A-F]+)-U\+([0-9A-F]+)$/) || upperValue.match(/^([0-9A-F]+)-([0-9A-F]+)$/);
             if (match) {
                 const start = parseInt(match[1], 16);
@@ -1165,7 +1165,6 @@
                 }
             }
 
-            // Check for single character patterns: U+XXXX or XXXX
             match = upperValue.match(/^U\+([0-9A-F]+)$/) || upperValue.match(/^([0-9A-F]+)$/);
             if (match) {
                 const start = parseInt(match[1], 16);
@@ -1483,6 +1482,20 @@
                 parsedSource = parseSRT(sourceFile);
                 activeSourceSubset = parsedSource;
                 resetBatchState();
+
+                translatedSRT = null;
+                parsedTranslated = null;
+                timestampMismatches = [];
+                rawOutputLog = '';
+                isPartialTranslation = false;
+                translationLanguage = '';
+                translationCode = '';
+                lastDetectedPrompt = '';
+                
+                document.getElementById('results').classList.remove('show');
+                document.getElementById('editor-section').classList.remove('show');
+                document.getElementById('action-buttons').style.display = 'none';
+                document.getElementById('srt-editor').value = '';
                 
                 document.getElementById('srt-file-button').classList.add('selected');
                 document.getElementById('srt-file-button').textContent = `✓ ${file.name}`;
@@ -1501,6 +1514,11 @@
             reader.onload = function(event) {
                 uploadedTranslatedFile = event.target.result;
                 uploadedTranslatedParsed = parseSRT(uploadedTranslatedFile);
+
+                document.getElementById('results').classList.remove('show');
+                document.getElementById('editor-section').classList.remove('show');
+                document.getElementById('action-buttons').style.display = 'none';
+
                 document.getElementById('translated-srt-file-button').classList.add('selected');
                 document.getElementById('translated-srt-file-button').textContent = `✓ ${file.name}`;
                 checkCanTranslate();
@@ -2099,7 +2117,7 @@
                 const apiEndpoint = document.getElementById('api-endpoint').value.trim() || document.getElementById('api-endpoint').placeholder;
                 const apiKey = document.getElementById('api-key').value || 'dummy';
 
-                if (!translationLanguage) {
+                if (!translationLanguage || lastDetectedPrompt !== promptText) {
                     results.innerHTML = `<div class="loading"></div> Detecting translation language with ${liteModelName.split('-')[0].replace(/^./, c => c.toUpperCase())}`;
                     const languageResponse = await fetch(apiEndpoint, {
                         method: 'POST',
@@ -2130,6 +2148,8 @@
                             translationLanguage = rawLangContent;
                             translationCode = '';
                         }
+
+                        lastDetectedPrompt = promptText;
                     } else {
                         translationLanguage = 'Translated'; 
                         translationCode = '';

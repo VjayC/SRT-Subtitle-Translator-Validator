@@ -1,6 +1,7 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, FileText, Settings as SettingsIcon } from 'lucide-react';
+import { Home, FileText, Settings as SettingsIcon, Minus, Square, X } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const GithubIcon = ({ size = 20 }: { size?: number }) => (
@@ -23,6 +24,11 @@ const GithubIcon = ({ size = 20 }: { size?: number }) => (
 
 export const Layout = () => {
   const location = useLocation();
+  const isMac = navigator.userAgent.includes('Mac');
+  
+  // Render custom controls only on Windows/Linux
+  const showCustomControls = !isMac && '__TAURI_INTERNALS__' in window;
+  const appWindow = showCustomControls ? getCurrentWindow() : null;
 
   const navItems = [
     { path: '/', label: 'Dashboard', icon: Home },
@@ -41,47 +47,88 @@ export const Layout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Navigation Bar */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-[#1a1a1a]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      {/* 1. select-none: Prevents text highlighting from stealing the drag event.
+        2. [-webkit-app-region:drag]: Triggers native OS dragging on macOS.
+        3. data-tauri-drag-region: Triggers Tauri's IPC dragging on Windows/Linux.
+      */}
+      <header 
+        className="sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-[#1a1a1a] select-none [-webkit-app-region:drag]" 
+        data-tauri-drag-region
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-tauri-drag-region>
+          <div className="flex justify-between items-center h-16" data-tauri-drag-region>
             
             {/* Title and GitHub Link */}
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent">
+            <div className={clsx("flex items-center gap-3", isMac ? "pl-[72px]" : "")} data-tauri-drag-region>
+              <h1 
+                className="text-xl font-bold bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent pointer-events-none" 
+                data-tauri-drag-region
+              >
                 SRT Translator
               </h1>
+              {/* [-webkit-app-region:no-drag] ensures the user can still click the link */}
               <a 
-                href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator/tree/main?tab=readme-ov-file#prerequisites" 
-                onClick={(e) => handleExternalLink(e, "https://github.com/VjayC/SRT-Subtitle-Translator-Validator/tree/main?tab=readme-ov-file#prerequisites")}
+                href="https://github.com/VjayC/SRT-Subtitle-Translator-Validator#desktop-application-specifics" 
+                onClick={(e) => handleExternalLink(e, "https://github.com/VjayC/SRT-Subtitle-Translator-Validator#desktop-application-specifics")}
                 title="View Documentation on GitHub"
-                className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors mt-0.5"
+                className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white transition-colors mt-0.5 [-webkit-app-region:no-drag]"
               >
                 <GithubIcon size={20} />
               </a>
             </div>
             
-            {/* Nav Links */}
-            <nav className="flex gap-1">
-              {navItems.map(({ path, label, icon: Icon }) => {
-                const isActive = location.pathname === path;
-                return (
-                  <Link
-                    key={path}
-                    to={path}
-                    className={clsx(
-                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                      isActive 
-                        ? 'bg-gradient-to-r from-[#667eea]/10 to-[#764ba2]/10 text-[#667eea] dark:text-[#889cf4]' 
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]'
-                    )}
+            {/* Nav Links & Windows Controls Container */}
+            <div className="flex items-center gap-4">
+              {/* [-webkit-app-region:no-drag] ensures nav buttons are clickable */}
+              <nav className="flex gap-1 [-webkit-app-region:no-drag]"> 
+                {navItems.map(({ path, label, icon: Icon }) => {
+                  const isActive = location.pathname === path;
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={clsx(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                        isActive 
+                          ? 'bg-gradient-to-r from-[#667eea]/10 to-[#764ba2]/10 text-[#667eea] dark:text-[#889cf4]' 
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a]'
+                      )}
+                    >
+                      <Icon size={18} />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Custom Title Bar Controls for Windows/Linux */}
+              {showCustomControls && appWindow && (
+                <div className="flex items-center gap-1 pl-4 border-l border-gray-200 dark:border-gray-800 [-webkit-app-region:no-drag]">
+                  <button 
+                    onClick={() => appWindow.minimize()} 
+                    className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:hover:text-white dark:hover:bg-gray-800 rounded transition-colors"
+                    title="Minimize"
                   >
-                    <Icon size={18} />
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
+                    <Minus size={18} />
+                  </button>
+                  <button 
+                    onClick={() => appWindow.toggleMaximize()} 
+                    className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 dark:hover:text-white dark:hover:bg-gray-800 rounded transition-colors"
+                    title="Maximize"
+                  >
+                    <Square size={14} />
+                  </button>
+                  <button 
+                    onClick={() => appWindow.close()} 
+                    className="p-1.5 text-gray-500 hover:text-white hover:bg-red-500 rounded transition-colors"
+                    title="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </header>

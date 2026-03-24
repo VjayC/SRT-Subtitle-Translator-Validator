@@ -23,7 +23,7 @@ public class CliProxyManagerService {
     // Removed @PostConstruct so it doesn't start automatically
     public void startProxy() {
         if (isProxyRunning()) {
-            logger.info("CLI Proxy is already running.");
+            logger.info("CLIProxyAPI is already running.");
             return;
         }
 
@@ -48,24 +48,24 @@ public class CliProxyManagerService {
             // Add "exec " here as well
             builder = new ProcessBuilder("sh", "-c", "exec " + settings.getCliCommandLinux());
         } else {
-            logger.warn("Unsupported Operating System. Cannot start CLI proxy.");
+            logger.warn("Unsupported Operating System. Cannot start CLIProxyAPI.");
             return;
         }
 
         try {
-            logger.info("Attempting to start CLI Proxy with command via shell...");
+            logger.info("Attempting to start CLIProxyAPI with command via shell...");
             builder.redirectErrorStream(true); 
             proxyProcess = builder.start();
-            logger.info("CLI Proxy process spawned successfully.");
+            logger.info("CLIProxyAPI process spawned successfully.");
         } catch (IOException e) {
-            logger.error("Failed to start CLI Proxy.", e);
+            logger.error("Failed to start CLIProxyAPI.", e);
         }
     }
 
     @PreDestroy
     public void stopProxy() {
         if (isProxyRunning()) {
-            logger.info("Application is shutting down. Terminating CLI Proxy...");
+            logger.info("Application is shutting down. Terminating CLIProxyAPI...");
             
             // Explicitly kill any child processes first (crucial for Windows cmd.exe wrapper)
             proxyProcess.descendants().forEach(ProcessHandle::destroy);
@@ -76,14 +76,14 @@ public class CliProxyManagerService {
             try {
                 Thread.sleep(1000); 
                 if (proxyProcess.isAlive()) {
-                    logger.warn("CLI Proxy did not terminate cleanly. Forcing shutdown...");
+                    logger.warn("CLIProxyAPI did not terminate cleanly. Forcing shutdown...");
                     proxyProcess.descendants().forEach(ProcessHandle::destroyForcibly);
                     proxyProcess.destroyForcibly();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            logger.info("CLI Proxy terminated.");
+            logger.info("CLIProxyAPI terminated.");
         }
     }
 

@@ -11,7 +11,7 @@ export const TemplateManager = () => {
     throw new Error('TemplateManager must be used within a TemplateProvider');
   }
 
-  const { templates, saveTemplate, deleteTemplate } = templateContext;
+  const { templates, setTemplates, saveTemplate, deleteTemplate, reorderTemplates } = templateContext;
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [templateName, setTemplateName] = useState('');
@@ -20,6 +20,8 @@ export const TemplateManager = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showGuide, setShowGuide] = useState(true);
+  
+  const [draggedId, setDraggedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeId) {
@@ -41,9 +43,43 @@ export const TemplateManager = () => {
     setSuccess(null);
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+
+    const newTemplates = [...templates];
+    const draggedIndex = newTemplates.findIndex(t => t.id === draggedId);
+    const targetIndex = newTemplates.findIndex(t => t.id === targetId);
+
+    const [draggedItem] = newTemplates.splice(draggedIndex, 1);
+    newTemplates.splice(targetIndex, 0, draggedItem);
+
+    setTemplates(newTemplates);
+    setDraggedId(null);
+
+    // NEW: Save the updated order to the backend instantly
+    reorderTemplates(newTemplates.map(t => t.id));
+  };
+
   const handleValidateAndSave = async () => {
     setError(null);
     setSuccess(null);
+
+    // Scroll to top to see feedback
+    const scrollContainer = document.getElementById('template-editor-scroll-container');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     if (!templateName.trim()) {
       setError('Please provide a name for this template.');
@@ -76,7 +112,7 @@ export const TemplateManager = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-8rem)] lg:min-h-[600px]">
       
       {/* Sidebar: Saved Templates */}
       <div className="w-full lg:w-1/3 flex flex-col gap-4">
@@ -91,7 +127,7 @@ export const TemplateManager = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-xl p-2 space-y-2">
+        <div className="flex-1 overflow-y-auto max-h-[35vh] lg:max-h-none bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-xl p-2 space-y-2">
           {templates.length === 0 ? (
             <div className="text-center text-gray-500 text-sm py-8">
               No templates saved yet.
@@ -100,16 +136,21 @@ export const TemplateManager = () => {
             templates.map((tmpl) => (
               <div 
                 key={tmpl.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, tmpl.id)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, tmpl.id)}
                 onClick={() => setActiveId(tmpl.id)}
                 className={clsx(
                   'flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border',
                   activeId === tmpl.id 
                     ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
-                    : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-[#1a1a1a]'
+                    : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-[#1a1a1a]',
+                  draggedId === tmpl.id ? 'opacity-50' : 'opacity-100'
                 )}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <FileText size={16} className="text-gray-400 flex-shrink-0" />
+                  <FileText size={16} className="text-gray-400 flex-shrink-0 cursor-grab active:cursor-grabbing" />
                   <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">
                     {tmpl.name}
                   </span>
@@ -131,9 +172,9 @@ export const TemplateManager = () => {
       </div>
 
       {/* Main Editor Area */}
-      <div className="w-full lg:w-2/3 flex flex-col overflow-hidden">
+      <div className="w-full lg:w-2/3 flex flex-col min-h-[650px] lg:min-h-0 overflow-hidden">
         
-        <div className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-xl flex flex-col h-full shadow-sm">
+        <div className="bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-xl flex flex-col flex-1 min-h-0 shadow-sm">
           {/* Editor Header */}
           <div className="p-4 border-b border-gray-200 dark:border-[#1a1a1a] flex flex-wrap gap-4 items-center justify-between bg-gray-50/50 dark:bg-[#0f0f0f]/50">
             <div className="flex-1 min-w-[200px]">
@@ -157,7 +198,7 @@ export const TemplateManager = () => {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4">
+          <div id="template-editor-scroll-container" className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col space-y-4">
             {/* Validation Feedback */}
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-start gap-2">

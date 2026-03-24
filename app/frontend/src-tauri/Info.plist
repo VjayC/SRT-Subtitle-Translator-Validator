@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSDownloadsFolderUsageDescription</key>
+  <string>Needs access to your Downloads folder so that CLIProxyAPI can read your config.yaml file.</string>
+  
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>Needs access to your Desktop so that CLIProxyAPI can read your config.yaml file.</string>
+  
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>Needs access to your Documents folder so that CLIProxyAPI can read your config.yaml file.</string>
+
+  <key>NSNetworkVolumesUsageDescription</key>
+  <string>Needs access to network volumes so that CLIProxyAPI can read your config.yaml file.</string>
+  
+  <key>NSRemovableVolumesUsageDescription</key>
+  <string>Needs access to removable volumes so that CLIProxyAPI can read your config.yaml file.</string>
+</dict>
+</plist>

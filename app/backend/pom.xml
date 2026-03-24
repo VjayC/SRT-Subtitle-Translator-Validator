@@ -12,7 +12,7 @@
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>srt-backend</name>
-	<description>Spring Boot backend and CLI Proxy manager for the SRT Translator desktop app</description>
+	<description>Spring Boot backend and CLIProxyAPI manager for the SRT Translator desktop app</description>
 	<url/>
 	<licenses>
 		<license/>

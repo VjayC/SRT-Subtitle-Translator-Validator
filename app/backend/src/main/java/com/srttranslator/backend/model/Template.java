@@ -29,6 +29,9 @@ public class Template {
 
     @Column(columnDefinition = "TEXT")
     private String rawContent;
+    
+    @Column(name = "display_order")
+    private Integer displayOrder = 0;
 
     // Standard Getters and Setters
     public String getId() { return id; }
@@ -51,4 +54,6 @@ public class Template {
     public void setPlaceholders(List<String> placeholders) { this.placeholders = placeholders; }
     public String getRawContent() { return rawContent; }
     public void setRawContent(String rawContent) { this.rawContent = rawContent; }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
 }

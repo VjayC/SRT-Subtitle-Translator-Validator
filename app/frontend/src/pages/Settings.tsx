@@ -78,7 +78,7 @@ export const Settings = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Global Settings</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Configure your API endpoints, translation models, and background proxy commands.
+            Configure your API endpoints, translation models, and background CLIProxyAPI commands.
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -126,7 +126,7 @@ export const Settings = () => {
           <div className="p-6 space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                CLI Proxy API Endpoint
+                CLIProxyAPI Endpoint
               </label>
               <input
                 type="text"
@@ -189,11 +189,11 @@ export const Settings = () => {
           </div>
         </div>
 
-        {/* CLI Proxy Commands Card (Spans full width) */}
+        {/* CLIProxyAPI Commands Card (Spans full width) */}
         <div className="md:col-span-2 bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-[#1a1a1a] rounded-xl overflow-hidden shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-[#1a1a1a] bg-gray-50/50 dark:bg-[#0f0f0f]/50 flex items-center gap-2">
             <Terminal size={18} className="text-gray-500 dark:text-gray-400" />
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200">CLI Proxy API Launch Commands</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200">CLIProxyAPI Launch Commands</h3>
           </div>
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
@@ -207,7 +207,7 @@ export const Settings = () => {
                 value={localSettings.cliCommandWindows}
                 onChange={handleChange}
                 placeholder='e.g., cli-proxy-api.exe --config "%USERPROFILE%\Downloads\config.yaml"'
-                title="Windows CLI Proxy Command"
+                title="Windows CLIProxyAPI Command"
                 className="w-full px-4 py-2 font-mono bg-gray-50 dark:bg-[#141414] border border-gray-300 dark:border-[#333] rounded-lg text-sm focus:outline-none focus:border-gray-500"
               />
             </div>
@@ -222,7 +222,7 @@ export const Settings = () => {
                 value={localSettings.cliCommandMac}
                 onChange={handleChange}
                 placeholder='e.g., /opt/homebrew/opt/cliproxyapi/bin/cliproxyapi --config "$HOME/Downloads/config.yaml"'
-                title="macOS CLI Proxy Command"
+                title="macOS CLIProxyAPI Command"
                 className="w-full px-4 py-2 font-mono bg-gray-50 dark:bg-[#141414] border border-gray-300 dark:border-[#333] rounded-lg text-sm focus:outline-none focus:border-gray-500"
               />
             </div>
@@ -237,7 +237,7 @@ export const Settings = () => {
                 value={localSettings.cliCommandLinux}
                 onChange={handleChange}
                 placeholder='e.g., cli-proxy-api --config "$HOME/Downloads/config.yaml"'
-                title="Linux CLI Proxy Command"
+                title="Linux CLIProxyAPI Command"
                 className="w-full px-4 py-2 font-mono bg-gray-50 dark:bg-[#141414] border border-gray-300 dark:border-[#333] rounded-lg text-sm focus:outline-none focus:border-gray-500"
               />
             </div>

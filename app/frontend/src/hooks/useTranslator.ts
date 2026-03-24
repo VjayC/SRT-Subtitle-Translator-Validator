@@ -1,4 +1,6 @@
-import { useState, useContext } from 'react';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { useState, useContext, useCallback } from 'react';
 import { SettingsContext } from '../context/SettingsContext';
 import { parseSimplifiedSRT } from '../utils/srtUtils';
 import type { Subtitle } from '../utils/srtUtils';
@@ -48,6 +50,7 @@ export const useTranslator = (): UseTranslatorResult => {
   const [translatedSubtitles, setTranslatedSubtitles] = useState<Subtitle[]>([]);
   const [translationLanguage, setTranslationLanguage] = useState('');
   const [translationCode, setTranslationCode] = useState('');
+  const [lastDetectedPrompt, setLastDetectedPrompt] = useState('');
   const [isPartialTranslation, setIsPartialTranslation] = useState(false);
   const [rawOutputLog, setRawOutputLog] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -56,15 +59,16 @@ export const useTranslator = (): UseTranslatorResult => {
     setRawOutputLog(prev => prev ? prev + '\n\n---\n\n' + text : text);
   };
 
-  const resetTranslation = () => {
+  const resetTranslation = useCallback(() => {
     setTranslatedSubtitles([]);
     setTranslationLanguage('');
     setTranslationCode('');
+    setLastDetectedPrompt('');
     setIsPartialTranslation(false);
     setRawOutputLog('');
     setError(null);
     setLoadingMessage(null);
-  };
+  }, []);
 
   // Shared helper: detect language from prompt using lite model
   const detectLanguage = async (
@@ -146,12 +150,13 @@ export const useTranslator = (): UseTranslatorResult => {
     const apiKey = settings.apiKey || 'dummy';
 
     try {
-      // Language detection (only on first translate, not on re-translate)
-      if (!translationLanguage) {
+      // Language detection (runs if language isn't set OR if the prompt has changed)
+      if (!translationLanguage || lastDetectedPrompt !== finalPromptText) {
         setLoadingMessage(`Detecting translation language with ${liteModel}...`);
         const detected = await detectLanguage(finalPromptText, apiEndpoint, apiKey, liteModel);
         setTranslationLanguage(detected.language);
         setTranslationCode(detected.code);
+        setLastDetectedPrompt(finalPromptText);
       }
 
       setLoadingMessage(`Translating with ${mainModel} — this may take a few minutes...`);
@@ -420,20 +425,35 @@ export const useTranslator = (): UseTranslatorResult => {
     }
   };
 
-  const downloadRawOutput = () => {
+  const downloadRawOutput = async () => {
     if (!rawOutputLog) {
       alert('No raw output to download!');
       return;
     }
-    const blob = new Blob([rawOutputLog], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'raw_output.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    try {
+      // 1. Prompt the user for a save location
+      const filePath = await save({
+        filters: [{ name: 'Text Document', extensions: ['txt'] }],
+        defaultPath: 'raw_output.txt'
+      });
+
+      // 2. If they didn't cancel the dialog, write the file
+      if (filePath) {
+        await writeTextFile(filePath, rawOutputLog);
+      }
+    } catch (err) {
+      // 3. Fallback for standard web browser context
+      const blob = new Blob([rawOutputLog], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'raw_output.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   return {

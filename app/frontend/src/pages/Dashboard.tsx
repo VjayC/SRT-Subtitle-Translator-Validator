@@ -1,4 +1,6 @@
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { useState, useContext, useEffect, useRef } from 'react';
 import { TemplateContext } from '../context/TemplateContext.tsx';
 import { FileDropzone } from '../components/FileDropzone.tsx';
@@ -119,13 +121,6 @@ export const Dashboard = () => {
     setActiveSourceSubset(sourceSubtitles);
   }, [sourceSubtitles]);
 
-  useEffect(() => {
-    setBatchCurrentNum(1);
-    setBatchStartIdx(1);
-    setBatchEndInput('');
-    setAccumulatedSubtitles([]);
-  }, [sourceFile]);
-
   const {
     isTranslating,
     loadingMessage,
@@ -142,6 +137,20 @@ export const Dashboard = () => {
     downloadRawOutput,
     fixErrors,
   } = useTranslator();
+
+  // --- UPDATED: Clear previous batches AND translation data on new source file ---
+  useEffect(() => {
+    setBatchCurrentNum(1);
+    setBatchStartIdx(1);
+    setBatchEndInput('');
+    setAccumulatedSubtitles([]);
+    resetTranslation(); 
+  }, [sourceFile, resetTranslation]);
+
+  // --- ADDED: Clear previous validation UI when a new translated file is dropped ---
+  useEffect(() => {
+    setValidateParsed([]);
+  }, [translatedFile]);
 
   // For validate mode, show uploaded file's subtitles instead
   const displayedTranslated = mode === 'validate' ? validateParsed : translatedSubtitles;
@@ -352,7 +361,7 @@ export const Dashboard = () => {
   };
 
   // ── Download ──────────────────────────────────────────────────────────
-  const handleDownload = () => {
+  const handleDownload = async () => {
     let finalSubtitles: Subtitle[];
 
     if (mode === 'batch') {
@@ -387,14 +396,29 @@ export const Dashboard = () => {
     }
 
     const blob = new Blob([finalSRT], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    try {
+      // 1. Prompt the user for a save location
+      const filePath = await save({
+        filters: [{ name: 'Subtitle File', extensions: ['srt'] }],
+        defaultPath: filename // Use the dynamically generated filename as default
+      });
+
+      // 2. Write the file natively
+      if (filePath) {
+        await writeTextFile(filePath, finalSRT);
+      }
+    } catch (err) {
+      // 3. Web Fallback
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   // ── Derived UI state ──────────────────────────────────────────────────
@@ -501,19 +525,20 @@ export const Dashboard = () => {
             <button
               onClick={toggleProxy}
               disabled={isProxyLoading}
-              className="group relative flex items-center gap-3 px-4 py-2.5 bg-gray-50 dark:bg-[#141414] border border-gray-200 dark:border-[#333] hover:bg-gray-100 dark:hover:bg-[#222] hover:border-gray-300 dark:hover:border-[#444] rounded-xl transition-all disabled:opacity-50 flex-shrink-0"
+              className="group relative flex flex-col lg:flex-row items-center justify-center gap-1.5 lg:gap-3 px-3 lg:px-4 py-2 lg:py-2.5 bg-gray-50 dark:bg-[#141414] border border-gray-200 dark:border-[#333] hover:bg-gray-100 dark:hover:bg-[#222] hover:border-gray-300 dark:hover:border-[#444] rounded-xl transition-all disabled:opacity-50 flex-shrink-0"
               title={isProxyRunning ? "Click to Stop CLIProxyAPI" : "Click to Start CLIProxyAPI"}
             >
-              <div className="relative flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-b from-gray-200 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] overflow-hidden flex-shrink-0">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-2.5 bg-gradient-to-b from-white/70 to-transparent dark:from-white/20 rounded-t-full z-10 pointer-events-none"></div>
-                <div className={`w-3.5 h-3.5 rounded-full transition-all duration-500 z-0 ${
+              <div className="relative flex items-center justify-center w-6 h-6 lg:w-7 lg:h-7 rounded-full bg-gradient-to-b from-gray-200 to-gray-100 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] overflow-hidden flex-shrink-0">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 lg:w-5 h-2 lg:h-2.5 bg-gradient-to-b from-white/70 to-transparent dark:from-white/20 rounded-t-full z-10 pointer-events-none"></div>
+                <div className={`w-3 h-3 lg:w-3.5 lg:h-3.5 rounded-full transition-all duration-500 z-0 ${
                   isProxyRunning 
                     ? 'bg-green-500 shadow-[0_0_12px_2px_rgba(34,197,94,0.8),inset_0_-2px_4px_rgba(0,0,0,0.3)]' 
                     : 'bg-red-500 shadow-[0_0_12px_2px_rgba(239,68,68,0.8),inset_0_-2px_4px_rgba(0,0,0,0.3)]'
                 }`}></div>
               </div>
 
-              <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+              {/* whitespace-nowrap prevents the text from ever breaking, and lg: handles the sizing */}
+              <span className="text-[10px] lg:text-sm font-bold text-gray-700 dark:text-gray-300 leading-none lg:leading-normal whitespace-nowrap">
                 {isProxyRunning ? 'STOP' : 'START'}
               </span>
             </button>
@@ -910,17 +935,29 @@ export const Dashboard = () => {
               {/* Failsafe: When batch has errors, still allow downloading accumulated previous batches */}
               {mode === 'batch' && accumulatedSubtitles.length > 0 && validation.hasErrors && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const finalSRT = stringifySRT(accumulatedSubtitles);
-                    const blob = new Blob([finalSRT], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${sourceFile?.name.replace(/\.srt$/i, '') || 'subtitles'}_partial.srt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
+                    const defaultName = `${sourceFile?.name.replace(/\.srt$/i, '') || 'subtitles'}_partial.srt`;
+                    
+                    try {
+                      const filePath = await save({
+                        filters: [{ name: 'Subtitle File', extensions: ['srt'] }],
+                        defaultPath: defaultName
+                      });
+                      if (filePath) {
+                        await writeTextFile(filePath, finalSRT);
+                      }
+                    } catch (err) {
+                      const blob = new Blob([finalSRT], { type: 'text/plain' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = defaultName;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }
                   }}
                   className="flex items-center gap-2 px-5 py-2.5 bg-gray-200 dark:bg-[#1a1a1a] text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-300 dark:hover:bg-[#222] transition-colors"
                 >

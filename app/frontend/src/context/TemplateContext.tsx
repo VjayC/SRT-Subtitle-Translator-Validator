@@ -11,8 +11,10 @@ export interface SavedTemplate extends TemplateData {
 
 interface TemplateContextType {
   templates: SavedTemplate[];
+  setTemplates: React.Dispatch<React.SetStateAction<SavedTemplate[]>>; // Added here
   saveTemplate: (template: SavedTemplate) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
+  reorderTemplates: (orderedIds: string[]) => Promise<void>;
   activeTemplate: SavedTemplate | null;
   setActiveTemplate: (template: SavedTemplate | null) => void;
   isLoading: boolean;
@@ -48,7 +50,7 @@ export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }
           setTemplates(data);
           setIsLoading(false);
         })
-        .catch(() => { // <-- Removed 'err' here
+        .catch(() => { 
           console.warn("Backend not ready, retrying templates in 1s...");
           setTimeout(fetchTemplates, 1000); 
         });
@@ -95,9 +97,22 @@ export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
+  // NEW: Function to save the order
+  const reorderTemplates = async (orderedIds: string[]) => {
+    try {
+      await fetch(`${API_URL}/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderedIds)
+      });
+    } catch (err) {
+      console.error("Failed to save template order.", err);
+    }
+  };
+
   return (
     <TemplateContext.Provider value={{ 
-      templates, saveTemplate, deleteTemplate, activeTemplate, setActiveTemplate, isLoading,
+      templates, setTemplates, saveTemplate, deleteTemplate, reorderTemplates, activeTemplate, setActiveTemplate, isLoading,
       placeholderValues, setPlaceholderValues, activeScripts, setActiveScripts 
     }}>
       {children}
