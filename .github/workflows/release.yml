@@ -23,8 +23,11 @@ jobs:
           - platform: 'windows-latest'
             args: '--target aarch64-pc-windows-msvc'
             
-          # 4. Linux (Ubuntu)
-          - platform: 'ubuntu-24.04'
+          # 4. Linux (Ubuntu Intel / AMD)
+          - platform: 'ubuntu-latest'
+            args: ''
+          # 5. Linux ARM (Ubuntu)
+          - platform: 'ubuntu-24.04-arm'
             args: ''
 
     runs-on: ${{ matrix.platform }}
@@ -34,10 +37,10 @@ jobs:
 
       # 1. Install Linux Dependencies (Only runs on Ubuntu)
       - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04'
+        if: startsWith(matrix.platform, 'ubuntu')
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
       # 2. Setup Java & Build Backend
       - name: Setup Java
@@ -69,6 +72,8 @@ jobs:
         working-directory: ./app/frontend
         run: npm install
 
+      # Note: We don't need to add a cross-compile target for Linux ARM 
+      # because it will compile natively directly on the ubuntu-24.04-arm runner!
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -82,7 +87,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: ./app/frontend
-          tagName: ${{ github.ref_name }} # e.g., v1.3.0
+          tagName: ${{ github.ref_name }} 
           releaseName: 'SRT Translator & Validator ${{ github.ref_name }}'
           releaseBody: 'A new update is available! Please see the GitHub release page for the full changelog and details.'
           releaseDraft: true

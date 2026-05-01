@@ -25,6 +25,8 @@ const GithubIcon = ({ size = 20 }: { size?: number }) => (
 export const Layout = () => {
   const location = useLocation();
   const isMac = navigator.userAgent.includes('Mac');
+  const isWindows = navigator.userAgent.includes('Windows');
+  const isLinux = !isMac && !isWindows;
   
   // Render custom controls only on Windows/Linux
   const showCustomControls = !isMac && '__TAURI_INTERNALS__' in window;
@@ -46,13 +48,17 @@ export const Layout = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={clsx(
+      "h-screen flex flex-col overflow-hidden bg-white dark:bg-[#0a0a0a]",
+      // Only apply the fake window borders, shadows, and rounded corners on Linux
+      isLinux && "rounded-xl border border-gray-300 dark:border-[#1a1a1a] shadow-2xl"
+    )}>
       {/* 1. select-none: Prevents text highlighting from stealing the drag event.
         2. [-webkit-app-region:drag]: Triggers native OS dragging on macOS.
         3. data-tauri-drag-region: Triggers Tauri's IPC dragging on Windows/Linux.
       */}
       <header 
-        className="sticky top-0 z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-[#1a1a1a] select-none [-webkit-app-region:drag]" 
+        className="z-50 bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-200 dark:border-[#1a1a1a] select-none [-webkit-app-region:drag]" 
         data-tauri-drag-region
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-tauri-drag-region>
@@ -133,9 +139,11 @@ export const Layout = () => {
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+      {/* Main Content Area (Now handles its own scrolling) */}
+      <main className="flex-1 w-full overflow-y-auto bg-white dark:bg-[#0a0a0a] dark:[color-scheme:dark]">
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

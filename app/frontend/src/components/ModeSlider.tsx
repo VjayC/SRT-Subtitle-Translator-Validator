@@ -10,8 +10,8 @@ interface ModeSliderProps {
 
 export const ModeSlider = ({ currentMode, setMode, isProcessing }: ModeSliderProps) => {
   const modes: { id: AppMode; label: string; tooltip: string }[] = [
-    { id: 'translate', label: 'Translate', tooltip: 'For translating the entire file. Recommended for SRT files with around 800 to 900 indexes.' },
-    { id: 'batch', label: 'Batch Translate', tooltip: 'For translating the file in batches. Recommended for files with over 900 indexes.' },
+    { id: 'translate', label: 'Translate', tooltip: 'For translating the entire file. Recommended for files with around 800 to 900 indexes.' },
+    { id: 'batch', label: 'Batch Translate', tooltip: 'For translating the entire file in batches. Recommended for files with over 900 indexes.' },
     { id: 'validate', label: 'Validate', tooltip: 'For validating an already translated SRT file.' },
   ];
 

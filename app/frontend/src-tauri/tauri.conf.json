@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "SRT Translator",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "identifier": "com.srttranslator.desktop",
   "build": {
     "frontendDist": "../dist",
@@ -13,6 +13,8 @@
     "windows": [
       {
         "title": "SRT Translator",
+        "visible": false,
+        "transparent": true,
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -36,6 +38,7 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],

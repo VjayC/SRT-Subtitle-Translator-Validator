@@ -1,16 +1,39 @@
 @import "tailwindcss";
 
 @layer base {
+  /* Default solid backgrounds for Mac & Windows to prevent the white flash */
   body {
-    background-color: #f9fafb; /* gray-50 */
-    color: #111827;            /* gray-900 */
+    background-color: #ffffff; 
+    color: #111827;            
     transition: color 200ms, background-color 200ms;
   }
 
   @media (prefers-color-scheme: dark) {
     body {
-      background-color: #000000; /* black */
-      color: #ffffff;            /* white */
+      background-color: #000000; /* Instantly paints dark mode */
+      color: #ffffff;            
     }
   }
+
+  /* ONLY make the background transparent on Linux */
+  html.linux-transparent, 
+  html.linux-transparent body, 
+  html.linux-transparent #root {
+    background-color: transparent !important;
+  }
+}
+
+/* Tell the engine to follow the OS by default */
+:root {
+  color-scheme: light dark;
+}
+
+/* When Tailwind activates dark mode, force the native engine into dark mode */
+html.dark {
+  color-scheme: dark;
+}
+
+/* When Tailwind is in light mode, force the native engine into light mode */
+html:not(.dark) {
+  color-scheme: light;
 }

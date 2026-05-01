@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-
 @Service
 public class CliProxyManagerService {
 
@@ -23,16 +21,16 @@ public class CliProxyManagerService {
     // Removed @PostConstruct so it doesn't start automatically
     public void startProxy() {
         if (isProxyRunning()) {
-            logger.info("CLIProxyAPI is already running.");
+            logger.info("CLI Proxy is already running.");
             return;
         }
 
         Settings settings = settingsRepository.findById(1L).orElseGet(() -> {
             Settings defaults = new Settings();
             // Restored the defaults you wanted
-            defaults.setCliCommandWindows("cli-proxy-api.exe --config \"%USERPROFILE%\\Downloads\\config.yaml\"");
-            defaults.setCliCommandMac("/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi --config \"$HOME/Downloads/config.yaml\"");
-            defaults.setCliCommandLinux("cli-proxy-api --config \"$HOME/Downloads/config.yaml\"");
+            defaults.setCliCommandWindows("\"%USERPROFILE%\\Desktop\\cli-proxy-api\" --config \"%USERPROFILE%\\Desktop\\config.yaml\"");
+            defaults.setCliCommandMac("\"/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi\" --config \"$HOME/Desktop/config.yaml\"");
+            defaults.setCliCommandLinux("\"$HOME/cliproxyapi/cli-proxy-api\" --config \"$HOME/Desktop/config.yaml\"");
             return defaults;
         });
 
@@ -40,7 +38,8 @@ public class CliProxyManagerService {
         ProcessBuilder builder;
 
         if (osName.contains("win")) {
-            builder = new ProcessBuilder("cmd.exe", "/c", settings.getCliCommandWindows());
+            // Add "/s" and wrap the entire command string in an extra set of quotes
+            builder = new ProcessBuilder("cmd.exe", "/s", "/c", "\"" + settings.getCliCommandWindows() + "\"");
         } else if (osName.contains("mac")) {
             // Add "exec " so the shell replaces itself with the proxy binary
             builder = new ProcessBuilder("sh", "-c", "exec " + settings.getCliCommandMac());
@@ -48,24 +47,50 @@ public class CliProxyManagerService {
             // Add "exec " here as well
             builder = new ProcessBuilder("sh", "-c", "exec " + settings.getCliCommandLinux());
         } else {
-            logger.warn("Unsupported Operating System. Cannot start CLIProxyAPI.");
+            logger.warn("Unsupported Operating System. Cannot start CLI proxy.");
             return;
         }
 
         try {
-            logger.info("Attempting to start CLIProxyAPI with command via shell...");
+            logger.info("Attempting to start CLI Proxy with command via shell...");
             builder.redirectErrorStream(true); 
             proxyProcess = builder.start();
-            logger.info("CLIProxyAPI process spawned successfully.");
-        } catch (IOException e) {
-            logger.error("Failed to start CLIProxyAPI.", e);
+            
+            // --- ADDED: Read the output stream to prevent OS hangs and see logs ---
+            new Thread(() -> {
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(proxyProcess.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        logger.info("[CLI Proxy]: " + line);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error reading proxy output.", e);
+                }
+            }).start();
+            // ----------------------------------------------------------------------
+            
+            // --- ADDED: Wait a split second to see if the command instantly crashes ---
+            Thread.sleep(500); 
+            
+            if (!proxyProcess.isAlive()) {
+                logger.error("CLI Proxy crashed immediately! Exit code: " + proxyProcess.exitValue());
+                proxyProcess = null; // Clear the dead process so the UI knows it's offline
+            } else {
+                logger.info("CLI Proxy process spawned successfully.");
+            }
+            // --------------------------------------------------------------------------
+
+        } catch (Exception e) { // Changed to Exception to also catch InterruptedException
+            logger.error("Failed to start CLI Proxy.", e);
+            proxyProcess = null;
         }
     }
 
     @PreDestroy
     public void stopProxy() {
         if (isProxyRunning()) {
-            logger.info("Application is shutting down. Terminating CLIProxyAPI...");
+            logger.info("Application is shutting down. Terminating CLI Proxy...");
             
             // Explicitly kill any child processes first (crucial for Windows cmd.exe wrapper)
             proxyProcess.descendants().forEach(ProcessHandle::destroy);
@@ -76,14 +101,14 @@ public class CliProxyManagerService {
             try {
                 Thread.sleep(1000); 
                 if (proxyProcess.isAlive()) {
-                    logger.warn("CLIProxyAPI did not terminate cleanly. Forcing shutdown...");
+                    logger.warn("CLI Proxy did not terminate cleanly. Forcing shutdown...");
                     proxyProcess.descendants().forEach(ProcessHandle::destroyForcibly);
                     proxyProcess.destroyForcibly();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            logger.info("CLIProxyAPI terminated.");
+            logger.info("CLI Proxy terminated.");
         }
     }
 

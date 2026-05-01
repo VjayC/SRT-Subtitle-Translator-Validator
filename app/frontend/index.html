@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>srt-translator</title>
+
+    <script>
+      const isMac = navigator.userAgent.includes('Mac');
+      const isWindows = navigator.userAgent.includes('Windows');
+      const isLinux = !isMac && !isWindows;
+      
+      if (isLinux) {
+        document.documentElement.classList.add('linux-transparent');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -9,11 +9,19 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { TemplateManager } from './pages/TemplateManager';
 import { Settings } from './pages/Settings';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function App() {
   // 1. Set up our React state to control the downloading UI
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
+
+  // Show the window after a tiny delay to ensure CSS is fully painted
+  useEffect(() => {
+    setTimeout(() => {
+      getCurrentWindow().show();
+    }, 50);
+  }, []);
 
   // Auto-check for updates on startup
   useEffect(() => {

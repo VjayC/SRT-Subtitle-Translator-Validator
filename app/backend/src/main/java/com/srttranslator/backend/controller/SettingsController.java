@@ -27,9 +27,9 @@ public class SettingsController {
             defaultSettings.setApiEndpoint("http://localhost:8317/v1/chat/completions");
             defaultSettings.setLiteModel("gemini-3-flash-preview");
             defaultSettings.setMainModel("gemini-3.1-pro-preview");
-            defaultSettings.setCliCommandWindows("cli-proxy-api.exe --config \"%USERPROFILE%\\Downloads\\config.yaml\"");
-            defaultSettings.setCliCommandMac("/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi --config \"$HOME/Downloads/config.yaml\"");
-            defaultSettings.setCliCommandLinux("cli-proxy-api --config \"$HOME/Downloads/config.yaml\"");
+            defaultSettings.setCliCommandWindows("\"%USERPROFILE%\\Desktop\\cli-proxy-api\" --config \"%USERPROFILE%\\Desktop\\config.yaml\"");
+            defaultSettings.setCliCommandMac("\"/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi\" --config \"$HOME/Desktop/config.yaml\"");
+            defaultSettings.setCliCommandLinux("\"$HOME/cliproxyapi/cli-proxy-api\" --config \"$HOME/Desktop/config.yaml\"");
             return repository.save(defaultSettings);
         });
     }
@@ -39,8 +39,8 @@ public class SettingsController {
         updatedSettings.setId(1L); // Force ID 1 to maintain single row
         Settings saved = repository.save(updatedSettings);
         
-        // Restart the proxy immediately using the new commands
-        cliProxyManagerService.restartProxy();
+        // Stop the proxy immediately using the new commands
+        cliProxyManagerService.stopProxy();
         
         return saved;
     }

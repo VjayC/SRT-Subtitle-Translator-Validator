@@ -830,8 +830,8 @@
 
         <div class="mode-slider" id="mode-slider">
             <div class="mode-slider-bg" id="mode-slider-bg"></div>
-            <div class="mode-option active" data-mode="translate" data-tooltip="For translating the entire file. Recommended for SRT files with around 800 to 900 indexes.">Translate</div>
-            <div class="mode-option" data-mode="batch" data-tooltip="For translating the file in batches. Recommended for files with over 900 indexes.">Batch Translate</div>
+            <div class="mode-option active" data-mode="translate" data-tooltip="For translating the entire file. Recommended for files with around 800 to 900 indexes.">Translate</div>
+            <div class="mode-option" data-mode="batch" data-tooltip="For translating the entire file in batches. Recommended for files with over 900 indexes.">Batch Translate</div>
             <div class="mode-option" data-mode="validate" data-tooltip="For validating an already translated SRT file.">Validate</div>
         </div>
 
@@ -2445,6 +2445,21 @@
             const editor = document.getElementById('srt-editor');
             translatedSRT = editor.value;
             parsedTranslated = parseSRT(translatedSRT);
+            
+            // Auto-adjust batch boundary if subtitles were added/removed at the end
+            if (currentMode === 'batch' && parsedTranslated.length > 0) {
+                const newEndIdx = parsedTranslated[parsedTranslated.length - 1].index;
+                const currentEndIdx = parseInt(document.getElementById('batch-end-idx').value) || targetEndIdx;
+                
+                // Only update if the new end index is valid and actually changed
+                if (!isNaN(newEndIdx) && newEndIdx >= batchStartIdx && newEndIdx !== currentEndIdx) {
+                    document.getElementById('batch-end-idx').value = newEndIdx;
+                    targetEndIdx = newEndIdx;
+                    activeSourceSubset = parsedSource.filter(
+                        sub => sub.index >= batchStartIdx && sub.index <= newEndIdx
+                    );
+                }
+            }
             
             autoResizeTextarea(editor);
             

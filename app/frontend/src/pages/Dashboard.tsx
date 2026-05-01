@@ -168,7 +168,12 @@ export const Dashboard = () => {
   useEffect(() => {
     if (!isTranslating && (displayedTranslated.length > 0 || isPartialTranslation || translationError || validation.hasErrors)) {
       setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          // Fallback just in case
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
       }, 100);
     }
   }, [isTranslating, displayedTranslated.length, isPartialTranslation, translationError, validation.hasErrors]);
@@ -326,7 +331,7 @@ export const Dashboard = () => {
       return;
     }
 
-    resetTranslation();
+    resetTranslation(true);
     const batchSubset = sourceSubtitles.filter(
       sub => sub.index >= batchStartIdx && sub.index <= endIdx
     );
@@ -337,7 +342,7 @@ export const Dashboard = () => {
   const handleBatchNextClick = () => {
     const endIdx = parseInt(batchEndInput);
     setAccumulatedSubtitles(prev => [...prev, ...translatedSubtitles]);
-    resetTranslation();
+    resetTranslation(true);
 
     const newBatchNum = batchCurrentNum + 1;
     const newStartIdx = endIdx + 1;
@@ -350,7 +355,11 @@ export const Dashboard = () => {
     if (!translatedFile || uploadedTranslatedSubtitles.length === 0) return;
     setValidateParsed(uploadedTranslatedSubtitles);
     setTimeout(() => {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      if (resultsRef.current) {
+        resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
     }, 100);
   };
 
@@ -859,12 +868,28 @@ export const Dashboard = () => {
                 setValidateParsed(updated);
               } else {
                 setTranslatedSubtitles(updated);
+                
+                // Auto-adjust batch boundary if subtitles were added/removed at the end
+                if (mode === 'batch' && updated.length > 0) {
+                  const newEndIdx = updated[updated.length - 1].index;
+                  const currentEndIdx = parseInt(batchEndInput);
+                  
+                  // Only update if the new end index is valid and actually changed
+                  if (!isNaN(newEndIdx) && newEndIdx >= batchStartIdx && newEndIdx !== currentEndIdx) {
+                    setBatchEndInput(String(newEndIdx));
+                    setActiveSourceSubset(
+                      sourceSubtitles.filter(
+                        sub => sub.index >= batchStartIdx && sub.index <= newEndIdx
+                      )
+                    );
+                  }
+                }
               }
             }}
           />
 
           <ValidationDashboard
-            sourceSubtitles={sourceSubtitles}
+            sourceSubtitles={validationSource}
             translatedSubtitles={displayedTranslated}
             validation={validation}
           />

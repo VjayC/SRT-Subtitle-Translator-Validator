@@ -22,9 +22,9 @@ const defaultSettings: Settings = {
   apiKey: '',
   liteModel: 'gemini-3-flash-preview',
   mainModel: 'gemini-3.1-pro-preview',
-  cliCommandWindows: 'cli-proxy-api.exe --config "%USERPROFILE%\\Downloads\\config.yaml"',
-  cliCommandMac: '/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi --config "$HOME/Downloads/config.yaml"',
-  cliCommandLinux: 'cli-proxy-api --config "$HOME/Downloads/config.yaml"',
+  cliCommandWindows: '"%USERPROFILE%\\Desktop\\cli-proxy-api" --config "%USERPROFILE%\\Desktop\\config.yaml"',
+  cliCommandMac: '"/opt/homebrew/opt/cliproxyapi/bin/cliproxyapi" --config "$HOME/Desktop/config.yaml"',
+  cliCommandLinux: '"$HOME/cliproxyapi/cli-proxy-api" --config "$HOME/Desktop/config.yaml"',
 };
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

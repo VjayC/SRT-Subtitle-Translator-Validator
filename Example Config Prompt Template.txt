@@ -4,7 +4,7 @@
 {{Basic Latin}} {{Latin Supplement}} {{Telugu}}
 {{TV show}} {{Psych}} {{2006}} {{, S01E01}} {{, (Title)}} {{Shawn Spencer}} {{}} {{}}
 
-You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in CONTENT MAPPING and SCRIPT & LANGUAGE RULES mentioned below. Failure to adhere to these rules is not an option.
+Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in CONTENT MAPPING and SCRIPT & LANGUAGE RULES mentioned below. Failure to adhere to these rules is not an option.
 
 **Goal:** Translate the attached English .srt file for the {{Enter movie or TV show}} {{Movie/TV Show Name}} ({{Release Year}}){{Season/Episode Number in the format , S01E01}}{{Episode Title in the format , (Title)}} into casual Telugu for a native Telugu speaker who is not fluent in English.
 

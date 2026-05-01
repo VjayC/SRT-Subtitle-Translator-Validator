@@ -12,7 +12,7 @@ export const parseMarkdown = (markdown: string): string => {
   const tableRegex = /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/gm;
   html = html.replace(tableRegex, function(_match, headerRow, bodyRows) {
       const headers = headerRow.split('|').map((h: string) => h.trim()).filter((h: string) => h);
-      const headerHtml = '<tr>' + headers.map((h: string) => '<th class="border border-gray-300 dark:border-[#444] bg-gray-100 dark:bg-[#222] px-4 py-2 text-left font-semibold">' + h + '</th>').join('') + '</tr>';
+      const headerHtml = '<tr>' + headers.map((h: string) => '<th class="border border-gray-300 dark:border-[#444] bg-gray-100 dark:bg-[#222] px-4 py-2 text-center font-semibold">' + h + '</th>').join('') + '</tr>';
       const rows = bodyRows.trim().split('\n');
       const bodyHtml = rows.map((row: string) => {
           const cells = row.split('|').map((c: string) => c.trim()).filter((c: string) => c);

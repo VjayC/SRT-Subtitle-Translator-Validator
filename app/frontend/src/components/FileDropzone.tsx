@@ -10,6 +10,13 @@ interface FileDropzoneProps {
 }
 
 export const FileDropzone = ({ label, accept, onFileSelect, selectedFile }: FileDropzoneProps) => {
+  const isMac = navigator.userAgent.includes('Mac');
+  const isWindows = navigator.userAgent.includes('Windows');
+  const isLinux = !isMac && !isWindows;
+  const helperText = isLinux 
+    ? `📄 Click to select ${accept} file...` 
+    : `📄 Choose or drag ${accept} file here...`;
+
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -91,7 +98,7 @@ export const FileDropzone = ({ label, accept, onFileSelect, selectedFile }: File
             'truncate text-sm font-medium',
             selectedFile ? 'text-[#667eea]' : 'text-gray-500 dark:text-gray-400'
           )}>
-            {selectedFile ? selectedFile.name : `📄 Choose or drag ${accept} file here...`}
+            {selectedFile ? selectedFile.name : helperText}
           </span>
         </div>
       </div>

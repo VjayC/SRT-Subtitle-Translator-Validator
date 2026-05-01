@@ -12,20 +12,24 @@
 
 A comprehensive browser-based and desktop tool that leverages Large Language Models (LLMs) to translate SRT subtitle files and automatically validate the output for common errors. Built specifically to create high-quality, script-accurate subtitles using your existing LLM subscriptions (Gemini, ChatGPT, Claude, etc.) via [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
 
-Original TV Show in English            |  Output of translated SRT in Tenglish
+Input SRT in English  |  Output of translated SRT in Tenglish
 :-------------------------:|:-------------------------:
-![](./images/psych_english_translation.png)  |  ![](./images/psych_tenglish_translation.png)
+<img src="./images/psych_english_translation.png">  |  <img src="./images/psych_tenglish_translation.png">
 
 > [!NOTE]
 > Screenshots are taken from *Psych*, an American detective comedy-drama television series created by Steve Franks for USA Network.
 
 ## Motivation
 
-My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. While Large Language Models (LLMs) are incredibly powerful and can translate subtitles in minutes, they often introduce subtle errors, such as:
+My mom loves to watch movies and TV shows, but she isn't fluent in English. Properly translated subtitles are the perfect way for her to enjoy and understand the content. When I set out to find a subtitle translator powered by mainstream LLMs, I hit several roadblocks. 
+
+Existing solutions either required expensive paid API keys, charged high per-token rates (I tested commercial options like [GPT Subtitler](https://gptsubtitler.com/), but the pricing was unsustainable for my regular usage), or completely lacked the ability to detect and automatically fix the subtle formatting errors LLMs often introduce. Furthermore, I wanted a way to leverage my existing Gemini subscription rather than paying separately for API usage—which this tool achieves via [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI).
+
+While Large Language Models are incredibly powerful and can translate subtitles in minutes, they often introduce subtle errors without strict oversight, such as:
 
 * **Timestamp Drift:** The model may slightly alter timestamps, causing subtitles to appear too early or too late.
 * **Character "Hallucinations":** When translating for a specific language (like Telugu), the model might mistakenly insert characters from a similar-looking but incorrect script (like Devanagari, Tamil, or Kannada).
-* **Incomplete Translations:** Long subtitle files may be cut off mid-translation.
+* **Incomplete Translations:** Long subtitle files may be cut off mid-translation due to context limits.
 * **Formatting Errors:** Line breaks or subtitle numbering can sometimes be corrupted.
 
 This tool automates the entire translation workflow, validates the output, and provides one-click fixes for common LLM errors—ensuring the subtitles are perfect.
@@ -146,10 +150,10 @@ Create or edit your `config.yaml` file.
 
 For more information, please visit: https://help.router-for.me/configuration/basic.html or use the provided example `config.yaml`.
 
+</details>
+
 > [!IMPORTANT]
 > The `api-keys` value in `config.yaml` must match the API Key field in the web application. The key `dummy` is used by default if the field is left blank.
-
-</details>
 
 ## Usage
 
@@ -255,7 +259,7 @@ When a configured template is imported:
 
 **Example Non-Template Prompt:**
 ```markdown
-You are a hyper-vigilant subtitle translator and formatter. Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in CONTENT MAPPING and SCRIPT & LANGUAGE RULES mentioned below. Failure to adhere to these rules is not an option.
+Your task is to translate an English .srt file into casual "Tenglish" (a mix of Telugu and English). Your primary directive is 100% accuracy in CONTENT MAPPING and SCRIPT & LANGUAGE RULES mentioned below. Failure to adhere to these rules is not an option.
 
 **Goal:** Translate the attached English .srt file for the TV show Psych (2006), S02E02, (65 Million Years Off) into casual Telugu for a native Telugu speaker who is not fluent in English.
 
@@ -368,7 +372,7 @@ You can also add any custom Unicode range or character.
 
 ### Using Different Models
 
-Edit the Model Name field to use other models. Since CLIProxyAPI supports OpenAI, Claude, and Gemini, you can input models like `gemini-3.1-pro-preview`, `gpt-5.4`, or `claude-opus-4-6`. Depending on the model selected, translation quality may vary:
+Edit the Model Name field to use other models. Since CLIProxyAPI supports OpenAI, Claude, and Gemini, you can input models like `gemini-3.1-pro-preview`, `gpt-5.5`, or `claude-opus-4-7`. Depending on the model selected, translation quality may vary:
 - `gemini-3-flash-preview`: Faster, cheaper, good for simple translations
 - `gemini-2.5-pro`: More accurate, better for complex translations
 - `gemini-3.1-pro-preview`: Latest model, best quality and reasoning

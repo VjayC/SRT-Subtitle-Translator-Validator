@@ -25,7 +25,7 @@ interface UseTranslatorResult {
     finalPromptText: string,
     template: SavedTemplate
   ) => Promise<void>;
-  resetTranslation: () => void;
+  resetTranslation: (preserveLanguage?: boolean) => void;
   setTranslatedSubtitles: React.Dispatch<React.SetStateAction<Subtitle[]>>;
   downloadRawOutput: () => void;
   fixErrors: (
@@ -59,11 +59,15 @@ export const useTranslator = (): UseTranslatorResult => {
     setRawOutputLog(prev => prev ? prev + '\n\n---\n\n' + text : text);
   };
 
-  const resetTranslation = useCallback(() => {
+  const resetTranslation = useCallback((preserveLanguage: boolean = false) => {
     setTranslatedSubtitles([]);
-    setTranslationLanguage('');
-    setTranslationCode('');
-    setLastDetectedPrompt('');
+
+    if (!preserveLanguage) {
+      setTranslationLanguage('');
+      setTranslationCode('');
+      setLastDetectedPrompt('');
+    }
+
     setIsPartialTranslation(false);
     setRawOutputLog('');
     setError(null);
